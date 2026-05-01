@@ -474,7 +474,8 @@ a {
 .ticket-owner {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--green);
+  /* color: var(--green); */
+  color: #111118;
   max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
