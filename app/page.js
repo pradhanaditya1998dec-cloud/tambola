@@ -73,6 +73,12 @@ export default function GamePage() {
     return true;
   });
 
+  // Group displayed tickets into sheets of 6
+  const chunkArray = (arr, size) => {
+    return arr.length ? [arr.slice(0, size), ...chunkArray(arr.slice(size), size)] : [];
+  };
+  const ticketSheets = chunkArray(displayedTickets, 6);
+
   return (
     <div className="page">
       {/* Header */}
@@ -153,16 +159,24 @@ export default function GamePage() {
               </div>
             </div>
 
-            <div className="tickets-grid">
-              {displayedTickets.map((ticket) => (
-                <TicketCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  calledNumbers={game.calledNumbers || []}
-                  gameStatus={game.status}
-                />
+            <div className="tickets-sheets-container">
+              {ticketSheets.map((sheet, sIdx) => (
+                <div key={sIdx} className="ticket-sheet">
+                  <h3 className="sheet-title">Sheet {sIdx + 1}</h3>
+                  <div className="tickets-grid">
+                    {sheet.map((ticket, tIdx) => (
+                      <TicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        calledNumbers={game.calledNumbers || []}
+                        gameStatus={game.status}
+                        colorIndex={tIdx}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
-              {displayedTickets.length === 0 && (
+              {ticketSheets.length === 0 && (
                 <div className="no-tickets">No tickets found</div>
               )}
             </div>

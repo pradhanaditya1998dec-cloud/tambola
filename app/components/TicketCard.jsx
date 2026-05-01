@@ -5,14 +5,15 @@ import { reconstructGrid } from "../lib/tambola";
 
 const ADMIN_PHONE = '919769740159'; // e.g. "919876543210"
 
-export default function TicketCard({ ticket, calledNumbers, gameStatus }) {
+export default function TicketCard({ ticket, calledNumbers, gameStatus, colorIndex }) {
   const called = new Set(calledNumbers || []);
   const isBooked = ticket.status === "booked";
   const canBook = gameStatus === "waiting" && !isBooked;
   const grid = reconstructGrid(ticket.numbers); // Reconstruct 2D from flat array
+  const colorClass = colorIndex !== undefined ? `ticket-color-${colorIndex % 6}` : 'ticket-color-0';
 
   return (
-    <div className={`ticket-card ${isBooked ? "booked" : "free"}`}>
+    <div className={`ticket-card ${isBooked ? "booked" : "free"} ${colorClass}`}>
       {/* Header */}
       <div className="ticket-header">
         <span className="ticket-id">{ticket.id}</span>
