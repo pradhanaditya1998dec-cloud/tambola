@@ -301,18 +301,42 @@ export function getTodayGameId() {
 }
 
 /** Announce a called number via the Web Speech API. */
+// export function announceNumber(num) {
+//   if (typeof window === "undefined" || !window.speechSynthesis) return;
+//   window.speechSynthesis.cancel();
+//   const nicknames = {
+//     1: "Kelly's eye", 2: "one little duck", 7: "lucky seven",
+//     8: "garden gate", 11: "legs eleven", 22: "two little ducks",
+//     88: "two fat ladies", 90: "top of the shop",
+//   };
+//   const phrase = nicknames[num] ? `Number ${num} — ${nicknames[num]}` : `Number ${num}`;
+//   const utt = new SpeechSynthesisUtterance(phrase);
+//   utt.rate = 0.85; utt.pitch = 1.1; utt.volume = 1;
+//   window.speechSynthesis.speak(utt);
+// }
+
+
+const audioCache = {};
+
+export function preloadAudio() {
+  if (typeof window === "undefined") return;
+  // Silently preload all 90 in the background
+  for (let n = 1; n <= 90; n++) {
+    audioCache[n] = new Audio(`/audio/${n}.mp3`);
+  }
+}
+
 export function announceNumber(num) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const nicknames = {
-    1: "Kelly's eye", 2: "one little duck", 7: "lucky seven",
-    8: "garden gate", 11: "legs eleven", 22: "two little ducks",
-    88: "two fat ladies", 90: "top of the shop",
-  };
-  const phrase = nicknames[num] ? `Number ${num} — ${nicknames[num]}` : `Number ${num}`;
-  const utt = new SpeechSynthesisUtterance(phrase);
-  utt.rate = 0.85; utt.pitch = 1.1; utt.volume = 1;
-  window.speechSynthesis.speak(utt);
+  if (typeof window === "undefined") return;
+
+  // Stop any currently playing audio
+  Object.values(audioCache).forEach(a => { a.pause(); a.currentTime = 0; });
+
+  const audio = audioCache[num] ?? new Audio(`/audio/${num}.mp3`);
+  audioCache[num] = audio;
+  audio.currentTime = 0;
+  audio.volume = 1;
+  audio.play().catch(err => console.warn("Audio play failed:", err));
 }
 
 export const WIN_TYPES = ["topLine", "middleLine", "lastLine", "fullHouse"];

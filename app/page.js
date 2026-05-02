@@ -7,7 +7,7 @@ import {
   subscribeTickets,
   buildWhatsAppLink,
 } from "./lib/gameStore";
-import { announceNumber, formatGameId } from "./lib/tambola";
+import { announceNumber, preloadAudio, formatGameId } from "./lib/tambola";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
@@ -208,6 +208,11 @@ export default function GamePage() {
   }
   const ticketSheets = chunkArray(filtered, 6);
 
+
+  useEffect(() => {
+    preloadAudio(); // silently loads all 90 in background
+  }, []);
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className="page">
@@ -405,6 +410,10 @@ export default function GamePage() {
             </div>
           </section>
         </main>
+      )}
+      {/* Floating winners panel — visible during live game and after */}
+      {game && game.status !== "waiting" && (
+        <WinnersPanel winners={game.winners || {}} />
       )}
     </div>
   );

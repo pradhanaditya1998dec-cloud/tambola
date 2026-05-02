@@ -38,9 +38,9 @@ export default function TicketCard({
       onClick={handleCardClick}
     >
       {/* Selection indicator */}
-      {isSelected && (
+      {/* {isSelected && (
         <div className="select-check">✓</div>
-      )}
+      )} */}
 
       {/* Header */}
       <div className="ticket-header">
