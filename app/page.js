@@ -1,37 +1,89 @@
 "use client";
 // app/page.jsx
-import { useEffect, useState, useCallback, useRef } from "react";
-import { subscribeGame, subscribeTickets } from "./lib/gameStore";
-import { getTodayGameId, announceNumber, checkWinners } from "./lib/tambola";
+import { useEffect, useState, useRef } from "react";
+import {
+  subscribeActiveGameId,
+  subscribeGame,
+  subscribeTickets,
+  buildWhatsAppLink,
+} from "./lib/gameStore";
+import { announceNumber, formatGameId } from "./lib/tambola";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
+import Link from "next/link";
+
+const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "919769740159";
 
 export default function GamePage() {
+  // ── Active game ID — driven by Firestore meta pointer ──────────────────
+  // This is the key fix: instead of computing a static gameId at render time,
+  // we subscribe to games/_meta and re-subscribe to game+tickets whenever the
+  // admin starts a new game. Users never need to refresh.
+  const [gameId, setGameId] = useState(null);
+
   const [game, setGame] = useState(null);
   const [tickets, setTickets] = useState({});
-  const [filter, setFilter] = useState("all"); // all | booked
+  const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const gameId = getTodayGameId();
+  const [countdown, setCountdown] = useState("");
+  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  // Subscribe to game state
+  const countdownRef = useRef(null);
+  const prevWinnersRef = useRef(null);
+  const prevCalled = useRef([]);
+
+  // Unsubscribe refs — cleaned up when gameId changes
+  const unsubGameRef = useRef(null);
+  const unsubTicketsRef = useRef(null);
+
+  // ── Step 1: subscribe to the active game pointer ──────────────────────
   useEffect(() => {
-    const unsub = subscribeGame(gameId, (data) => {
+    const unsub = subscribeActiveGameId((id) => {
+      setGameId(id);           // triggers Step 2
+      if (!id) setLoading(false); // no game exists yet
+    });
+    return unsub;
+  }, []);
+
+  // ── Step 2: whenever gameId changes, re-subscribe to game + tickets ───
+  useEffect(() => {
+    // Tear down previous subscriptions
+    unsubGameRef.current?.();
+    unsubTicketsRef.current?.();
+
+    if (!gameId) {
+      setGame(null);
+      setTickets({});
+      return;
+    }
+
+    // Reset state for the new game so stale data never shows
+    setGame(null);
+    setTickets({});
+    setSelectedTickets([]);
+    prevCalled.current = [];
+    setLoading(true);
+
+    unsubGameRef.current = subscribeGame(gameId, (data) => {
       setGame(data);
       setLoading(false);
     });
-    return unsub;
+
+    unsubTicketsRef.current = subscribeTickets(gameId, (data) => {
+      setTickets(data);
+    });
+
+    return () => {
+      unsubGameRef.current?.();
+      unsubTicketsRef.current?.();
+    };
   }, [gameId]);
 
-  // Subscribe to tickets
-  useEffect(() => {
-    const unsub = subscribeTickets(gameId, (data) => setTickets(data));
-    return unsub;
-  }, [gameId]);
-
-  // Announce new numbers
-  const prevCalled = useRef([]);
+  // ── Announce newly called numbers ─────────────────────────────────────
   useEffect(() => {
     if (!game?.calledNumbers?.length) return;
     const prev = new Set(prevCalled.current);
@@ -42,14 +94,102 @@ export default function GamePage() {
     }
   }, [game?.calledNumbers]);
 
-  const ticketList = Object.values(tickets).sort((a, b) =>
-    a.id.localeCompare(b.id)
-  );
+  // ── Countdown to scheduled start ──────────────────────────────────────
+  useEffect(() => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    if (!game?.scheduledAt || game.status !== "waiting") { setCountdown(""); return; }
+    function tick() {
+      const diff = game.scheduledAt - Date.now();
+      if (diff <= 0) { clearInterval(countdownRef.current); setCountdown("Starting now…"); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const parts = [];
+      if (h > 0) parts.push(String(h).padStart(2, "0"));
+      parts.push(String(m).padStart(2, "0"));
+      parts.push(String(s).padStart(2, "0"));
+      setCountdown(parts.join(":"));
+    }
+    tick();
+    countdownRef.current = setInterval(tick, 1000);
+    return () => clearInterval(countdownRef.current);
+  }, [game?.scheduledAt, game?.status]);
 
+  // Clear selection when game goes live
+  useEffect(() => {
+    if (game?.status === "live") setSelectedTickets([]);
+  }, [game?.status]);
+
+  // ── Winner Toast Notification ─────────────────────────────────────────
+  useEffect(() => {
+    if (!game) {
+      prevWinnersRef.current = null;
+      return;
+    }
+
+    const currentWinners = game.winners || {};
+
+    if (prevWinnersRef.current) {
+      const newWinTypes = Object.keys(currentWinners).filter(
+        type => !prevWinnersRef.current[type] && currentWinners[type]
+      );
+
+      if (newWinTypes.length > 0) {
+        const type = newWinTypes[0];
+        const winner = currentWinners[type];
+
+        const winLabels = {
+          topLine: "the Top Line",
+          middleLine: "the Middle Line",
+          lastLine: "the Last Line",
+          fullHouse: "a Full House"
+        };
+
+        const label = winLabels[type] || type;
+
+        setToast({
+          id: Date.now(),
+          user: winner.userName,
+          label
+        });
+
+        setTimeout(() => {
+          setToast(null);
+        }, 100000);
+      }
+    }
+
+    prevWinnersRef.current = currentWinners;
+  }, [game?.winners]);
+
+  // ── Ticket selection helpers ──────────────────────────────────────────
+  function toggleTicketSelect(ticketId) {
+    setSelectedTickets(prev =>
+      prev.includes(ticketId) ? prev.filter(id => id !== ticketId) : [...prev, ticketId]
+    );
+  }
+  function clearSelection() { setSelectedTickets([]); }
+
+  const whatsappHref = selectedTickets.length
+    ? buildWhatsAppLink(selectedTickets, ADMIN_PHONE)
+    : null;
+
+  function formatTime(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // ── Derived values ────────────────────────────────────────────────────
+  const ticketList = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
+  const freeCount = ticketList.filter(t => t.status === "free").length;
+  const bookedCount = ticketList.filter(t => t.status === "booked").length;
+
+  const activeFilter = game?.status === "live" ? "booked" : filter;
   const filtered = ticketList.filter((t) => {
-    if (filter === "booked" && t.status !== "booked") return false;
-    if (search && !t.id.toLowerCase().includes(search.toLowerCase()) &&
-        !(t.userName || "").toLowerCase().includes(search.toLowerCase())) return false;
+    if (activeFilter === "free" && t.status !== "free") return false;
+    if (activeFilter === "booked" && t.status !== "booked") return false;
+    if (search &&
+      !t.id.toLowerCase().includes(search.toLowerCase()) &&
+      !(t.userName || "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -58,107 +198,184 @@ export default function GamePage() {
     live: { label: "🔴 LIVE", cls: "status-live" },
     closed: { label: "Game over", cls: "status-closed" },
   };
-
   const status = STATUS_MAP[game?.status] || STATUS_MAP.waiting;
-  
-  // Find Full House winner
   const fullHouseWinner = game?.winners?.fullHouse;
-  
-  // When game is live, show only booked tickets
-  const displayFilter = game?.status === "live" ? "booked" : filter;
-  const displayedTickets = ticketList.filter((t) => {
-    if (displayFilter === "booked" && t.status !== "booked") return false;
-    if (search && !t.id.toLowerCase().includes(search.toLowerCase()) &&
-        !(t.userName || "").toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
 
-  // Group displayed tickets into sheets of 6
-  const chunkArray = (arr, size) => {
-    return arr.length ? [arr.slice(0, size), ...chunkArray(arr.slice(size), size)] : [];
-  };
-  const ticketSheets = chunkArray(displayedTickets, 6);
+  function chunkArray(arr, size) {
+    const result = [];
+    for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+    return result;
+  }
+  const ticketSheets = chunkArray(filtered, 6);
 
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className="page">
-      {/* Header */}
+      {/* Floating Winner Toast */}
+      {toast && (
+        <div key={toast.id} className="winner-toast">
+          <div className="toast-content">
+            <span className="toast-icon">🎉</span>
+            <span className="toast-message">
+              Congratulations <strong>{toast.user}</strong>! You have completed {toast.label}.
+            </span>
+          </div>
+        </div>
+      )}
+
       <header className="site-header">
         <div className="header-content">
           <div>
             <h1 className="site-title">TAMBOLA</h1>
-            <p className="site-subtitle">Daily Housie — {gameId}</p>
+            <p className="site-subtitle">
+              {gameId ? `Daily Housie — ${formatGameId(gameId)}` : "Daily Housie"}
+            </p>
+            {game && <div className={`game-status ${status.cls}`}>{status.label}</div>}
           </div>
-          <div className={`game-status ${status.cls}`}>{status.label}</div>
+
+          {/* Desktop nav */}
+          <nav className="header-nav desktop-nav">
+            <Link href="/rules" className="nav-link">📋 Rules</Link>
+            <Link href="/winners" className="nav-link">🏆 Past Winners</Link>
+          </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            className="hamburger"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+          >
+            <span /><span /><span />
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <nav className="mobile-nav" onClick={() => setMenuOpen(false)}>
+            <Link href="/rules" className="mobile-nav-link">📋 Rules</Link>
+            <Link href="/winners" className="mobile-nav-link">🏆 Past Winners</Link>
+            {game && <div className={`game-status ${status.cls}`}>{status.label}</div>}
+          </nav>
+        )}
       </header>
 
+      <div>
+        <img className="tambola-banner" src="/assets/banner.webp" alt="Welcome to Housie" />
+      </div>
+
+      {/* Scheduled countdown banner */}
+      {game?.scheduledAt && game?.status === "waiting" && countdown && (
+        <div className="public-countdown-bar">
+          <span className="pub-cd-label">
+            Today's game starts at <strong>{formatTime(game.scheduledAt)}</strong>
+          </span>
+          <div className="pub-cd-timer">
+            <span className="pub-cd-digits">{countdown}</span>
+            <span className="pub-cd-sub">until game starts</span>
+          </div>
+        </div>
+      )}
+
+      {/* Floating multi-select booking bar */}
+      {selectedTickets.length > 0 && (
+        <div className="booking-bar">
+          <div className="booking-bar-info">
+            <span className="booking-bar-count">
+              {selectedTickets.length} ticket{selectedTickets.length > 1 ? "s" : ""} selected
+            </span>
+            <span className="booking-bar-ids">{selectedTickets.join(", ")}</span>
+          </div>
+          <div className="booking-bar-actions">
+            <button onClick={clearSelection} className="booking-bar-clear">✕ Clear</button>
+            <a href={whatsappHref} target="_blank" rel="noreferrer" className="booking-bar-wa">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+              </svg>
+              Book via WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content ── */}
       {loading ? (
-        <div className="loading">Loading today's game…</div>
-      ) : !game ? (
-        <div className="loading">No game scheduled today. Check back later!</div>
-      ) : game.status === "closed" && fullHouseWinner ? (
+        <div className="loading">Loading game…</div>
+      ) : !gameId || !game ? (
+        <div className="loading">No game active right now. Check back soon!</div>
+      ) : game.status === "closed" ? (
+        // Victory / Closed screen
         <main className="victory-screen">
           <div className="victory-content">
-            <div className="victory-animation">🎉🎊🎉</div>
-            <h2 className="victory-title">TODAY'S WINNER!</h2>
-            <h1 className="victory-subtitle">HURRAY!</h1>
-            
-            <div className="winner-card">
-              <div className="winner-ticket">{fullHouseWinner.ticketId}</div>
-              <div className="winner-name">{fullHouseWinner.ticketId} - Full House</div>
-              <div className="winner-person">{fullHouseWinner.ticketId}</div>
+            {fullHouseWinner && (
+              <>
+                <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
+                <h2 className="victory-title">FULL HOUSE!</h2>
+                <div className="victory-winner-card">
+                  <p className="victory-label">Today's Full House Winner</p>
+                  <p className="victory-name">{fullHouseWinner.userName}</p>
+                  <p className="victory-ticket">{fullHouseWinner.ticketId}</p>
+                </div>
+              </>
+            )}
+
+            <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
+              <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
+              <p style={{ fontSize: "1.2rem", color: "var(--text)", lineHeight: "1.5" }}>
+                Bookings for the next game will start soon.<br />Be Ready!
+              </p>
             </div>
 
-            <p className="victory-message">
-              🏆 Congratulations! 🏆<br/>
-              <strong>{fullHouseWinner.ticketId}</strong> has won<br/>
-              <span className="fullhouse-text">FULL HOUSE!</span>
-            </p>
-
-            <div className="confetti">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div key={i} className="confetti-piece" style={{
-                  left: `${Math.random() * 100}%`,
-                  delay: `${Math.random() * 0.5}s`,
-                  duration: `${2 + Math.random() * 1}s`,
-                }}></div>
-              ))}
-            </div>
+            <WinnersPanel winners={game.winners || {}} />
+            <Link
+              href="/winners"
+              className="admin-btn primary"
+              style={{ marginTop: 24, display: "inline-block", padding: "12px 24px" }}
+            >
+              View All Past Winners
+            </Link>
           </div>
         </main>
       ) : (
         <main className="main-layout">
-          {/* Sidebar */}
           <aside className="sidebar">
             <NumberBoard calledNumbers={game.calledNumbers || []} />
             <WinnersPanel winners={game.winners || {}} />
           </aside>
 
-          {/* Tickets */}
           <section className="tickets-section">
+            {/* Toolbar */}
             <div className="tickets-toolbar">
               <input
                 className="search-input"
-                placeholder="Search ticket or name…"
+                placeholder="Search ticket ID or name…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <div className="filter-tabs">
-                {["all", "booked"].map((f) => (
+                {["all", "free", "booked"].map((f) => (
                   <button
                     key={f}
-                    className={`filter-tab ${filter === f ? "active" : ""}`}
+                    className={`filter-tab ${activeFilter === f ? "active" : ""}`}
                     onClick={() => setFilter(f)}
                     disabled={game?.status === "live"}
                   >
-                    {f === "all" ? `All (${ticketList.length})` 
-                     :
-                     `Booked (${ticketList.filter(t => t.status === "booked").length})`}
+                    {f === "all" ? `All (${ticketList.length})` :
+                      f === "free" ? `Available (${freeCount})` :
+                        `Booked (${bookedCount})`}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Multi-select instruction */}
+            {game?.status === "waiting" && filter !== "booked" && (
+              <div className="multiselect-hint">
+                💡 Tap tickets to select multiple, then send a single WhatsApp booking request
+              </div>
+            )}
+
+            {/* Ticket sheets */}
             <div className="tickets-sheets-container">
               {ticketSheets.map((sheet, sIdx) => (
                 <div key={sIdx} className="ticket-sheet">
@@ -171,6 +388,9 @@ export default function GamePage() {
                         calledNumbers={game.calledNumbers || []}
                         gameStatus={game.status}
                         colorIndex={tIdx}
+                        selectable={game.status === "waiting" && ticket.status === "free"}
+                        isSelected={selectedTickets.includes(ticket.id)}
+                        onToggleSelect={toggleTicketSelect}
                       />
                     ))}
                   </div>
