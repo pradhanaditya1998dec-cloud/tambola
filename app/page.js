@@ -255,7 +255,7 @@ export default function GamePage() {
           <nav className="mobile-nav" onClick={() => setMenuOpen(false)}>
             <Link href="/rules" className="mobile-nav-link">📋 Rules</Link>
             <Link href="/winners" className="mobile-nav-link">🏆 Past Winners</Link>
-            {game && <div className={`game-status ${status.cls}`}>{status.label}</div>}
+            {/* {game && <div className={`game-status ${status.cls}`}>{status.label}</div>} */}
           </nav>
         )}
       </header>
