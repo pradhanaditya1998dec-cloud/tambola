@@ -135,6 +135,10 @@ a {
   .main-layout {
     grid-template-columns: 1fr;
   }
+
+  .main-layout {
+    padding: 16px 16px 60px;
+  }
 }
 
 .loading {
