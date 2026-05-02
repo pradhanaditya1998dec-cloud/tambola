@@ -340,7 +340,10 @@ export default function GamePage() {
         <main className="main-layout">
           <aside className="sidebar">
             <NumberBoard calledNumbers={game.calledNumbers || []} />
-            <WinnersPanel winners={game.winners || {}} />
+            {
+              game?.status === "live" && <WinnersPanel winners={game.winners || {}} />
+            }
+            
           </aside>
 
           <section className="tickets-section">
