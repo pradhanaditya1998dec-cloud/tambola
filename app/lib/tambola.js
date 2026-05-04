@@ -300,22 +300,6 @@ export function getTodayGameId() {
   return generateGameId();
 }
 
-/** Announce a called number via the Web Speech API. */
-// export function announceNumber(num) {
-//   if (typeof window === "undefined" || !window.speechSynthesis) return;
-//   window.speechSynthesis.cancel();
-//   const nicknames = {
-//     1: "Kelly's eye", 2: "one little duck", 7: "lucky seven",
-//     8: "garden gate", 11: "legs eleven", 22: "two little ducks",
-//     88: "two fat ladies", 90: "top of the shop",
-//   };
-//   const phrase = nicknames[num] ? `Number ${num} — ${nicknames[num]}` : `Number ${num}`;
-//   const utt = new SpeechSynthesisUtterance(phrase);
-//   utt.rate = 0.85; utt.pitch = 1.1; utt.volume = 1;
-//   window.speechSynthesis.speak(utt);
-// }
-
-
 const audioCache = {};
 
 export function preloadAudio() {

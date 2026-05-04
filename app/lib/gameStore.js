@@ -4,7 +4,7 @@ import {
   onSnapshot, arrayUnion, writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { generate50Tickets, getTodayGameId } from "./tambola";
+import { generateTickets, getTodayGameId } from "./tambola";
 
 // ── Meta doc — tracks active game id ──────────────────────
 const META_ID = "_meta";
@@ -16,11 +16,18 @@ export function subscribeActiveGameId(callback) {
 }
 
 // ── Game document ──────────────────────────────────────────
-export async function initTodayGame(gameId) {
+// rules: { topLine, middleLine, lastLine, fullHouse } — all boolean
+export async function initTodayGame(gameId, rules = {}) {
   const id = gameId || getTodayGameId();
   await setDoc(doc(db, "games", id), {
     id, status: "waiting", calledNumbers: [],
     winners: {}, createdAt: Date.now(), scheduledAt: null,
+    rules: {
+      topLine:    rules.topLine    ?? true,
+      middleLine: rules.middleLine ?? true,
+      lastLine:   rules.lastLine   ?? true,
+      fullHouse:  true, // always enabled
+    },
   });
   await setDoc(doc(db, "games", META_ID), { activeGameId: id }, { merge: true });
   return id;
@@ -34,7 +41,8 @@ export async function initTickets(gameId, count = 50, sheetSize = 6) {
     existing.forEach(d => del.delete(d.ref));
     await del.commit();
   }
-  const tickets = generate50Tickets(count, sheetSize);
+  // ✅ Fixed: use generateTickets() which respects count & sheetSize
+  const tickets = generateTickets(count, sheetSize);
   const BATCH = 490;
   for (let i = 0; i < tickets.length; i += BATCH) {
     const batch = writeBatch(db);

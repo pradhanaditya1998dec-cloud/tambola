@@ -360,28 +360,47 @@ export default function GamePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <div className="filter-tabs">
-                {["all", "free", "booked"].map((f) => (
-                  <button
-                    key={f}
-                    className={`filter-tab ${activeFilter === f ? "active" : ""}`}
-                    onClick={() => setFilter(f)}
-                    disabled={game?.status === "live"}
-                  >
-                    {f === "all" ? `All (${ticketList.length})` :
-                      f === "free" ? `Available (${freeCount})` :
-                        `Booked (${bookedCount})`}
-                  </button>
-                ))}
-              </div>
+
+              {
+                game?.status === "waiting" && (
+                   <div className="filter-tabs">
+                    {["all", "free", "booked"].map((f) => (
+                      <button
+                        key={f}
+                        className={`filter-tab ${activeFilter === f ? "active" : ""}`}
+                        onClick={() => setFilter(f)}
+                        disabled={game?.status === "live"}
+                      >
+                        {f === "all" ? `All (${ticketList.length})` :
+                          f === "free" ? `Available (${freeCount})` :
+                            `Booked (${bookedCount})`}
+                      </button>
+                    ))}
+                  </div>  
+                )
+              }
+             
             </div>
 
             {/* Multi-select instruction */}
-            {game?.status === "waiting" && filter !== "booked" && (
+            {/* {game?.status === "waiting" && filter !== "booked" && (
               <div className="multiselect-hint">
                 💡 Tap tickets to select multiple, then send a single WhatsApp booking request
               </div>
-            )}
+            )} */}
+
+            {game?.rules && (
+                <div className="active-rules-bar">
+                  <span className="active-rules-label">💡 Active prizes:</span>
+                  {["topLine","middleLine","lastLine","fullHouse"].map(r =>
+                    game.rules[r] ? (
+                      <span key={r} className="active-rule-chip">
+                        💡{{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
+                      </span>
+                    ) : null
+                  )}
+                </div>
+              )}
 
             {/* Ticket sheets */}
             <div className="tickets-sheets-container">

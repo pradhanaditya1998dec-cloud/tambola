@@ -15,50 +15,39 @@ import BookTicket from "../components/BookTicket";
 import BookingsTable from "../components/BookingsTable";
 import PastWinnersTable from "../components/PastWinnersTable";
 import ConfirmModal from "../components/ConfirmModal";
+import NewGameModal from "../components/NewGameModal";
 import Toast, { useToast } from "../components/Toast";
 
-// ── Nav items config ──────────────────────────────────────
+// ── Nav config ────────────────────────────────────────────
 const NAV_SECTIONS = [
   {
     label: "Game",
-    items: [
-      { id: "game",      label: "Game Dashboard", icon: <IconGrid /> },
-    ],
+    items: [{ id: "game", label: "Game Dashboard", icon: <IconGrid /> }],
   },
   {
     label: "Tickets",
     items: [
-      { id: "book",      label: "Book Ticket",   icon: <IconTicket /> },
-      { id: "bookings",  label: "All Bookings",  icon: <IconList />, badge: true },
+      { id: "book",     label: "Book Ticket",  icon: <IconTicket /> },
+      { id: "bookings", label: "All Bookings", icon: <IconList />, badge: true },
     ],
   },
   {
     label: "Results",
     items: [
-      { id: "winners",   label: "Winners",       icon: <IconTrophy /> },
-      { id: "past",      label: "Past Games",    icon: <IconHistory /> },
+      { id: "past", label: "Past Games", icon: <IconHistory /> },
     ],
   },
 ];
 
-// ── SVG Icons ─────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────
 function IconGrid() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>;
-}
-function IconClock() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>;
-}
-function IconBoard() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>;
 }
 function IconTicket() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a2 2 0 010-4h20a2 2 0 010 4v1a2 2 0 000 4v1a2 2 0 01-2 2H4a2 2 0 01-2-2v-1a2 2 0 000-4V9z"/></svg>;
 }
 function IconList() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>;
-}
-function IconTrophy() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5h4M18 9h2a2 2 0 002-2V5h-4"/><path d="M6 5h12v6a6 6 0 01-12 0V5z"/><path d="M12 17v4M8 21h8"/></svg>;
 }
 function IconHistory() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
@@ -69,15 +58,17 @@ function IconChevronLeft() {
 function IconMenu() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
 }
+function IconSignOut() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 13, height: 13 }}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>;
+}
 
-// ── Routing components are directly rendered now ──────────
-
+// ── Main component ────────────────────────────────────────
 export default function AdminPage() {
   const { toasts, removeToast, success, error: toastError, info } = useToast();
 
-  const [user, setUser]         = useState(null);
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
+  const [user, setUser]           = useState(null);
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
   const [authError, setAuthError] = useState("");
 
   const [game, setGame]       = useState(null);
@@ -86,9 +77,9 @@ export default function AdminPage() {
   const [drawing, setDrawing] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  // Ticket config
-  const [ticketCount, setTicketCount] = useState(50);
-  const [sheetSize, setSheetSize]     = useState(6);
+  // Modals
+  const [newGameModalOpen, setNewGameModalOpen] = useState(false);
+  const [modal, setModal] = useState({ open: false });
 
   // Auto-draw
   const [autoDrawEnabled, setAutoDrawEnabled]   = useState(false);
@@ -103,13 +94,10 @@ export default function AdminPage() {
   const [scheduleCountdown, setScheduleCountdown] = useState("");
   const scheduleTimerRef = useRef(null);
 
-  // Confirm modal
-  const [modal, setModal] = useState({ open: false, title: "", message: "", onConfirm: null });
-
   // Sidebar
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navCollapsed, setNavCollapsed]   = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [activeRoute, setActiveRoute] = useState("game");
+  const [activeRoute, setActiveRoute]     = useState("game");
 
   const calledSet = useRef(new Set());
   const gameRef   = useRef(null);
@@ -137,9 +125,11 @@ export default function AdminPage() {
   // ── Winner detection ──────────────────────────────────────
   useEffect(() => {
     if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
+    const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, fullHouse: true };
     Object.values(tickets).filter(t => t.status === "booked").forEach(async ticket => {
       const wins = checkWinners(ticket.numbers, game.calledNumbers);
       for (const type of WIN_TYPES) {
+        if (!rules[type]) continue;
         if (wins[type] && !game.winners?.[type]) {
           await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
           success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
@@ -179,6 +169,7 @@ export default function AdminPage() {
     return () => clearInterval(scheduleTimerRef.current);
   }, [game?.scheduledAt, game?.status, gameId]);
 
+  // Stop auto-draw whenever the game is no longer live
   useEffect(() => { if (game?.status !== "live") stopAutoDraw(); }, [game?.status]);
 
   // ── Draw ──────────────────────────────────────────────────
@@ -212,44 +203,34 @@ export default function AdminPage() {
   }
 
   function stopAutoDraw() {
-    clearInterval(autoDrawRef.current);       autoDrawRef.current = null;
-    clearInterval(autoCountdownRef.current);  autoCountdownRef.current = null;
+    clearInterval(autoDrawRef.current);      autoDrawRef.current = null;
+    clearInterval(autoCountdownRef.current); autoCountdownRef.current = null;
     setAutoDrawEnabled(false); setAutoCountdown(0);
   }
 
-  // ── Init ──────────────────────────────────────────────────
-  async function handleInit() {
-    const count = parseInt(ticketCount, 10);
-    const size  = parseInt(sheetSize, 10);
-    if (isNaN(count) || count < 1 || count > 500) { toastError("Ticket count must be 1–500."); return; }
-    if (isNaN(size)  || size  < 2 || size  > 12)  { toastError("Sheet size must be 2–12.");    return; }
+  // ── Init — from NewGameModal ──────────────────────────────
+  async function handleInit({ ticketCount, sheetSize, rules }) {
     stopAutoDraw();
     setGenerating(true);
+    setNewGameModalOpen(false);
     try {
       const newId = generateGameId();
-      await initTodayGame(newId);
-      await initTickets(newId, count, size);
-      setGameId(newId); setGame(null); setTickets({});
-      success(`New game created! ${count} tickets ready.`);
+      await initTodayGame(newId, rules);
+      await initTickets(newId, ticketCount, sheetSize);
+      // Reset local state so old game data is fully cleared
+      setGameId(newId);
+      setGame(null);
+      setTickets({});
+      const ruleNames = Object.entries(rules)
+        .filter(([, v]) => v)
+        .map(([k]) => ({ topLine: "Top", middleLine: "Middle", lastLine: "Last", fullHouse: "Full House" }[k]))
+        .join(", ");
+      success(`✅ Game created! ${ticketCount} tickets · Prizes: ${ruleNames}`);
     } catch (e) { toastError("Init failed: " + e.message); }
     finally { setGenerating(false); }
   }
 
-  function confirmInitGame() {
-    setModal({
-      open: true,
-      title: "New Game / Reset?",
-      message: "This will create a new game and reset all current progress. Are you sure you want to proceed?",
-      confirmLabel: "Yes, Start New Game",
-      danger: false,
-      onConfirm: async () => {
-        setModal(m => ({ ...m, open: false }));
-        await handleInit();
-      },
-    });
-  }
-
-  // ── End game with confirm ─────────────────────────────────
+  // ── End game confirm ──────────────────────────────────────
   function confirmEndGame() {
     setModal({
       open: true,
@@ -287,16 +268,24 @@ export default function AdminPage() {
     catch { setAuthError("Invalid credentials."); }
   }
 
-  // Nav item click — acts as a route change
-  function handleNavClick(item) {
-    setMobileNavOpen(false);
-    setActiveRoute(item.id);
-  }
-
   const ticketList    = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
   const freeTickets   = ticketList.filter(t => t.status === "free");
   const bookedTickets = ticketList.filter(t => t.status === "booked");
   const calledArr     = game?.calledNumbers || [];
+
+  // BUG FIX 1: "New Game / Reset" must be disabled unless the game is
+  // closed (ended) OR there is no game at all yet.
+  // Previously: only `generating` was checked, so it was clickable mid-game.
+  const canCreateNewGame = !generating && (!game || game.status === "closed");
+
+  // BUG FIX 2: The NumberBoard receives `calledNumbers` from `game` via
+  // Firestore. When a new game is created, `setGame(null)` is called
+  // immediately, which drives `calledArr` to [] — so the board resets
+  // automatically once the new game's Firestore subscription fires.
+  // The fix is ensuring we pass [] (not stale data) when game is null.
+  // `calledArr` already handles this: `game?.calledNumbers || []`.
+  // Additionally, we key the NumberBoard on gameId so React fully
+  // remounts it whenever a new game starts, clearing any internal state.
 
   // ── Login screen ──────────────────────────────────────────
   if (!user) {
@@ -323,7 +312,6 @@ export default function AdminPage() {
       {/* ── Vertical Sidebar ── */}
       <nav className={`admin-sidenav ${navCollapsed ? "collapsed" : ""} ${mobileNavOpen ? "mobile-open" : ""}`}>
 
-        {/* Brand */}
         <div className="nav-brand">
           <div className="nav-logo">T</div>
           <div className="nav-brand-text">
@@ -332,7 +320,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Sections */}
         {NAV_SECTIONS.map(section => (
           <div className="nav-section" key={section.label}>
             <div className="nav-section-label">{section.label}</div>
@@ -340,7 +327,7 @@ export default function AdminPage() {
               <div
                 key={item.id}
                 className={`nav-item ${activeRoute === item.id ? "active" : ""}`}
-                onClick={() => handleNavClick(item)}
+                onClick={() => { setActiveRoute(item.id); setMobileNavOpen(false); }}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>
@@ -353,37 +340,26 @@ export default function AdminPage() {
           </div>
         ))}
 
-        {/* Divider before footer */}
         <div className="nav-divider" />
 
-        {/* Footer: user + collapse */}
         <div className="nav-footer">
           <div className="nav-user">
-            <div className="nav-avatar">
-              {user.email?.[0]?.toUpperCase() ?? "A"}
-            </div>
+            <div className="nav-avatar">{user.email?.[0]?.toUpperCase() ?? "A"}</div>
             <div className="nav-user-info">
               <div className="nav-user-name">{user.email}</div>
               <div className="nav-user-role">Super Admin</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button
-              className="nav-toggle"
-              onClick={() => signOut(auth)}
-              title="Sign out"
-              style={{ flex: 1 }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 13, height: 13 }}>
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-              </svg>
+            <button className="nav-toggle" onClick={() => signOut(auth)} title="Sign out" style={{ flex: 1 }}>
+              <IconSignOut />
               <span className="nav-toggle-label">Sign Out</span>
             </button>
             <button
               className="nav-toggle"
               onClick={() => setNavCollapsed(c => !c)}
               title={navCollapsed ? "Expand" : "Collapse"}
-              style={{ flex: navCollapsed ? 1 : "none", width: navCollapsed ? undefined : 34, padding: "0 8px" }}
+              style={{ width: navCollapsed ? undefined : 34, padding: "0 8px", flex: navCollapsed ? 1 : "none" }}
             >
               <IconChevronLeft />
             </button>
@@ -392,17 +368,14 @@ export default function AdminPage() {
       </nav>
 
       {/* Mobile backdrop */}
-      {mobileNavOpen && (
-        <div className="nav-backdrop" onClick={() => setMobileNavOpen(false)} />
-      )}
+      {mobileNavOpen && <div className="nav-backdrop" onClick={() => setMobileNavOpen(false)} />}
 
-      {/* ── Body (topbar + content + right panel) ── */}
+      {/* ── Body ── */}
       <div className="admin-body">
 
         {/* Topbar */}
         <div className="admin-topbar">
           <div className="admin-topbar-left">
-            {/* Mobile hamburger */}
             <button className="nav-mobile-toggle" onClick={() => setMobileNavOpen(o => !o)}>
               <IconMenu />
             </button>
@@ -419,14 +392,13 @@ export default function AdminPage() {
             <span className="topbar-stat">
               Status: <strong className={game?.status === "live" ? "stat-live" : ""}>{game?.status || "—"}</strong>
             </span>
-            <span className="topbar-stat">
-              Called: <strong>{calledArr.length}</strong>/90
-            </span>
+            <span className="topbar-stat">Called: <strong>{calledArr.length}</strong>/90</span>
           </div>
         </div>
 
-        {/* Toast + Modal */}
+        {/* Toasts + Modals */}
         <Toast toasts={toasts} onRemove={removeToast} />
+
         <ConfirmModal
           open={modal.open}
           title={modal.title}
@@ -437,240 +409,229 @@ export default function AdminPage() {
           onCancel={() => setModal(m => ({ ...m, open: false }))}
         />
 
-        {/* Content wrapper */}
-        <div className="admin-content-wrap">
+        <NewGameModal
+          open={newGameModalOpen}
+          onConfirm={handleInit}
+          onCancel={() => setNewGameModalOpen(false)}
+        />
 
-          {/* ── Scrollable main content ── */}
+        {/* Content */}
+        <div className="admin-content-wrap">
           <div className="admin-content">
             <div className="admin-layout">
-              {activeRoute === "game" && (
-                <>
-              {/* ── Game Controls ── */}
-              <section className="admin-card" id="section-controls">
-                <h2>Game Controls</h2>
 
-                <div className="ticket-gen-config">
-                  <div className="ticket-gen-row">
-                    <div className="ticket-gen-field">
-                      <label className="ticket-gen-label">Number of Tickets</label>
-                      <input type="number" min="1" max="500" value={ticketCount}
-                        onChange={e => setTicketCount(e.target.value)}
-                        className="admin-input ticket-gen-input" disabled={generating} />
-                    </div>
-                    <div className="ticket-gen-field">
-                      <label className="ticket-gen-label">Tickets per Sheet</label>
-                      <input type="number" min="2" max="9" value={sheetSize}
-                        onChange={e => setSheetSize(e.target.value)}
-                        className="admin-input ticket-gen-input" disabled={generating} />
-                    </div>
-                  </div>
-                </div>
+              {/* ── GAME DASHBOARD ── */}
+              {activeRoute === "game" && (<>
 
-                <div className="control-row">
-                  <button onClick={confirmInitGame} disabled={generating} className="admin-btn outline">
-                    {generating ? "⏳ Generating…" : "⚙️ New Game / Reset"}
-                  </button>
-                  <button
-                    onClick={() => setGameStatus(gameId, "live")}
-                    disabled={!gameId || game?.status === "live" || game?.status === "closed"}
-                    className="admin-btn primary"
-                  >
-                    ▶ Start
-                  </button>
-                  <button
-                    onClick={confirmEndGame}
-                    disabled={!gameId || game?.status === "closed"}
-                    className="admin-btn danger"
-                  >
-                    ⏹ End
-                  </button>
-                </div>
+                {/* Game Controls */}
+                <section className="admin-card">
+                  <h2>Game Controls</h2>
 
-                <div className="status-bar">
-                  Status: <strong>{game?.status || "—"}</strong>
-                  &nbsp;|&nbsp; Called: <strong>{calledArr.length} / 90</strong>
-                  &nbsp;|&nbsp; Remaining: <strong>{90 - calledArr.length}</strong>
-                  &nbsp;|&nbsp; Booked: <strong>{bookedTickets.length} / {ticketList.length}</strong>
-                </div>
-
-                <button
-                  onClick={() => { stopAutoDraw(); drawOne(); }}
-                  disabled={drawing || game?.status !== "live" || autoDrawEnabled}
-                  className="draw-btn"
-                >
-                  {drawing ? "Drawing…" : "🎱 Draw Next Number"}
-                </button>
-
-                {/* Auto-draw */}
-                <div className="autodraw-section">
-                  <div className="autodraw-header">
-                    <span className="autodraw-label">Auto Draw</span>
-                    {autoDrawEnabled && <span className="autodraw-countdown">Next in {autoCountdown}s</span>}
-                  </div>
-                  <div className="autodraw-controls">
-                    <div className="interval-control">
-                      <label>Every</label>
-                      <input type="number" min="2" max="30" value={autoDrawInterval}
-                        onChange={e => setAutoDrawInterval(Math.max(2, parseInt(e.target.value) || 4))}
-                        disabled={autoDrawEnabled} className="interval-input" />
-                      <label>seconds</label>
-                    </div>
-                    {autoDrawEnabled
-                      ? <button onClick={stopAutoDraw} className="admin-btn danger">⏸ Stop Auto</button>
-                      : <button onClick={startAutoDraw} disabled={game?.status !== "live"} className="admin-btn primary">▶ Start Auto</button>
-                    }
-                  </div>
-                  {autoDrawEnabled && (
-                    <div className="autodraw-active-bar">
-                      <div className="autodraw-progress" style={{ animationDuration: `${autoDrawInterval}s` }} />
+                  {/* Active rules badge */}
+                  {game?.rules && (
+                    <div className="active-rules-bar">
+                      <span className="active-rules-label">Active prizes:</span>
+                      {["topLine","middleLine","lastLine","fullHouse"].map(r =>
+                        game.rules[r] ? (
+                          <span key={r} className="active-rule-chip">
+                            {{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
+                          </span>
+                        ) : null
+                      )}
                     </div>
                   )}
-                </div>
 
-                {calledArr.length > 0 && (
-                  <div className="called-numbers-mini">
-                    <strong>Called ({calledArr.length}):</strong>
-                    <div className="called-chips">
-                      {[...calledArr].reverse().map(n => <span key={n} className="chip">{n}</span>)}
-                    </div>
+                  <div className="control-row">
+                    {/*
+                      BUG FIX 1: disabled when game is waiting or live.
+                      Only enabled when there is no game yet OR the game is closed.
+                      Tooltip explains why it's locked.
+                    */}
+                    <button
+                      onClick={() => setNewGameModalOpen(true)}
+                      disabled={!canCreateNewGame}
+                      title={
+                        game?.status === "live"    ? "End the game first before creating a new one" :
+                        game?.status === "waiting" ? "End the game first before creating a new one" :
+                        undefined
+                      }
+                      className="admin-btn outline"
+                    >
+                      {generating ? "⏳ Generating…" : "⚙️ New Game / Reset"}
+                    </button>
+
+                    <button
+                      onClick={() => setGameStatus(gameId, "live")}
+                      disabled={!gameId || game?.status === "live" || game?.status === "closed"}
+                      className="admin-btn primary"
+                    >
+                      ▶ Start
+                    </button>
+
+                    <button
+                      onClick={confirmEndGame}
+                      disabled={!gameId || game?.status === "closed"}
+                      className="admin-btn danger"
+                    >
+                      ⏹ End
+                    </button>
                   </div>
-                )}
-              </section>
 
-              {/* ── Schedule ── */}
-              <section className="admin-card" id="section-schedule">
-                <h2>Schedule Start</h2>
-                <p className="hint">Game auto-starts at set time. Players see a live countdown.</p>
+                  {/*
+                    Helper text when New Game is locked so admin knows exactly what to do.
+                  */}
+                  {game?.status === "live" && (
+                    <p className="hint" style={{ color: "var(--accent2)", marginBottom: 10 }}>
+                      ⚠️ End the current game before creating a new one.
+                    </p>
+                  )}
+                  {game?.status === "waiting" && (
+                    <p className="hint" style={{ marginBottom: 10 }}>
+                      Game is scheduled. Start or end it before creating a new one.
+                    </p>
+                  )}
 
-                {game?.scheduledAt && game.status === "waiting" && (
-                  <div className="schedule-banner">
-                    <div className="schedule-banner-left">
-                      <span className="schedule-label">Scheduled for</span>
-                      <span className="schedule-time">{formatTime(game.scheduledAt)}</span>
+                  <div className="status-bar">
+                    Status: <strong>{game?.status || "—"}</strong>
+                    &nbsp;|&nbsp; Called: <strong>{calledArr.length} / 90</strong>
+                    &nbsp;|&nbsp; Remaining: <strong>{90 - calledArr.length}</strong>
+                    &nbsp;|&nbsp; Booked: <strong>{bookedTickets.length} / {ticketList.length}</strong>
+                  </div>
+
+                  <button
+                    onClick={() => { stopAutoDraw(); drawOne(); }}
+                    disabled={drawing || game?.status !== "live" || autoDrawEnabled}
+                    className="draw-btn"
+                  >
+                    {drawing ? "Drawing…" : "🎱 Draw Next Number"}
+                  </button>
+
+                  {/* Auto-draw */}
+                  <div className="autodraw-section">
+                    <div className="autodraw-header">
+                      <span className="autodraw-label">Auto Draw</span>
+                      {autoDrawEnabled && <span className="autodraw-countdown">Next in {autoCountdown}s</span>}
                     </div>
-                    {scheduleCountdown && (
-                      <div className="countdown-badge">
-                        <span className="countdown-label">Starts in</span>
-                        <span className="countdown-value">{scheduleCountdown}</span>
+                    <div className="autodraw-controls">
+                      <div className="interval-control">
+                        <label>Every</label>
+                        <input type="number" min="2" max="30" value={autoDrawInterval}
+                          onChange={e => setAutoDrawInterval(Math.max(2, parseInt(e.target.value) || 4))}
+                          disabled={autoDrawEnabled} className="interval-input" />
+                        <label>seconds</label>
+                      </div>
+                      {autoDrawEnabled
+                        ? <button onClick={stopAutoDraw} className="admin-btn danger">⏸ Stop Auto</button>
+                        : <button onClick={startAutoDraw} disabled={game?.status !== "live"} className="admin-btn primary">▶ Start Auto</button>
+                      }
+                    </div>
+                    {autoDrawEnabled && (
+                      <div className="autodraw-active-bar">
+                        <div className="autodraw-progress" style={{ animationDuration: `${autoDrawInterval}s` }} />
                       </div>
                     )}
                   </div>
-                )}
-                {game?.status === "live"   && <div className="schedule-live-note">✅ Game is now live.</div>}
-                {game?.status === "closed" && <div className="schedule-live-note">Game has ended.</div>}
 
-                {(!game?.status || game.status === "waiting") && (
-                  <div className="schedule-form">
-                    <div className="schedule-input-row">
-                      <input type="time" className="admin-input time-input" value={scheduleTime}
-                        onChange={e => setScheduleTime(e.target.value)} />
-                      <button onClick={handleSetSchedule} className="admin-btn primary">Set</button>
-                      {game?.scheduledAt && (
-                        <button onClick={async () => {
-                          await setScheduledTime(gameId, null);
-                          setScheduleMsg("Cleared.");
-                          setScheduleTime("");
-                        }} className="admin-btn outline">Clear</button>
+                  {calledArr.length > 0 && (
+                    <div className="called-numbers-mini">
+                      <strong>Called ({calledArr.length}):</strong>
+                      <div className="called-chips">
+                        {[...calledArr].reverse().map(n => <span key={n} className="chip">{n}</span>)}
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Schedule */}
+                <section className="admin-card">
+                  <h2>Schedule Start</h2>
+                  <p className="hint">Game auto-starts at the set time. Players see a live countdown.</p>
+
+                  {game?.scheduledAt && game.status === "waiting" && (
+                    <div className="schedule-banner">
+                      <div className="schedule-banner-left">
+                        <span className="schedule-label">Scheduled for</span>
+                        <span className="schedule-time">{formatTime(game.scheduledAt)}</span>
+                      </div>
+                      {scheduleCountdown && (
+                        <div className="countdown-badge">
+                          <span className="countdown-label">Starts in</span>
+                          <span className="countdown-value">{scheduleCountdown}</span>
+                        </div>
                       )}
                     </div>
-                    {scheduleMsg && (
-                      <p className={scheduleMsg.startsWith("✓") ? "success-msg" : "error-msg"}>{scheduleMsg}</p>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {game?.status === "live"   && <div className="schedule-live-note">✅ Game is now live.</div>}
+                  {game?.status === "closed" && <div className="schedule-live-note">Game has ended.</div>}
 
-              </section>
+                  {(!game?.status || game.status === "waiting") && (
+                    <div className="schedule-form">
+                      <div className="schedule-input-row">
+                        <input type="time" className="admin-input time-input" value={scheduleTime}
+                          onChange={e => setScheduleTime(e.target.value)} />
+                        <button onClick={handleSetSchedule} className="admin-btn primary">Set</button>
+                        {game?.scheduledAt && (
+                          <button onClick={async () => {
+                            await setScheduledTime(gameId, null);
+                            setScheduleMsg("Cleared."); setScheduleTime("");
+                          }} className="admin-btn outline">Clear</button>
+                        )}
+                      </div>
+                      {scheduleMsg && (
+                        <p className={scheduleMsg.startsWith("✓") ? "success-msg" : "error-msg"}>{scheduleMsg}</p>
+                      )}
+                    </div>
+                  )}
+                </section>
 
-              {/* ── Number Board ── */}
-              <section className="admin-card admin-board-card" id="section-board">
-                <h2>Number Board — Click to Call</h2>
-                <p className="hint">
-                  {game?.status === "live"
-                    ? "Click any uncalled number to call it manually"
-                    : "Start the game to enable manual number selection"}
-                </p>
-                <NumberBoard
-                  calledNumbers={calledArr}
-                  interactive={game?.status === "live" && !autoDrawEnabled}
-                  onPickNumber={n => { stopAutoDraw(); drawOne(n); }}
-                />
-              </section>
+                {/* Number Board
+                  BUG FIX 2: key={gameId} forces React to fully unmount + remount
+                  the NumberBoard whenever a new game is created, so any internal
+                  highlighted/selected state is wiped clean.
+                  The calledNumbers prop already resets to [] because game is set to
+                  null on new game creation, but the key ensures even internal
+                  component state (e.g. hover, last-called highlight) is also cleared.
+                */}
+                <section className="admin-card admin-board-card">
+                  <h2>Number Board — Click to Call</h2>
+                  <p className="hint">
+                    {game?.status === "live"
+                      ? "Click any uncalled number to call it manually"
+                      : game?.status === "closed"
+                      ? "Game ended — create a new game to play again"
+                      : "Start the game to enable manual number selection"}
+                  </p>
+                  <NumberBoard
+                    key={gameId ?? "empty"}
+                    calledNumbers={calledArr}
+                    interactive={game?.status === "live" && !autoDrawEnabled}
+                    onPickNumber={n => { stopAutoDraw(); drawOne(n); }}
+                  />
+                </section>
 
-              {/* ── Booked Tickets ── */}
-              <section className="admin-card booked-list">
-                <div className="sp-section-header">
-                  <h2>Booked Tickets ({bookedTickets.length})</h2>
-                  <button
-                    onClick={() => setActiveRoute("book")}
-                    className="admin-btn outline sm"
-                  >
-                    + Book More
-                  </button>
-                </div>
-                <table className="bookings-table">
-                  <thead>
-                    <tr><th>Ticket</th><th>Name</th><th>Phone</th></tr>
-                  </thead>
-                  <tbody>
-                    {bookedTickets.map(t => (
-                      <tr key={t.id}>
-                        <td>{t.id}</td>
-                        <td>{t.userName}</td>
-                        <td>{t.userPhone}</td>
-                      </tr>
-                    ))}
-                    {bookedTickets.length === 0 && (
-                      <tr>
-                        <td colSpan={3} style={{ textAlign: "center", opacity: 0.5 }}>No bookings yet</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </section>
               </>)}
 
-              {/* ── Book Ticket Route ── */}
+              {/* ── BOOK TICKET ── */}
               {activeRoute === "book" && (
-                <section className="admin-card">
+                <section className="admin-card" style={{ gridColumn: "1 / -1" }}>
                   <h2>Book Ticket</h2>
-                  <div style={{ marginTop: 20 }}>
+                  <div style={{ marginTop: 16 }}>
                     <BookTicket gameId={gameId} freeTickets={freeTickets} onBooked={msg => success(msg)} />
                   </div>
                 </section>
               )}
 
-              {/* ── All Bookings Route ── */}
+              {/* ── ALL BOOKINGS ── */}
               {activeRoute === "bookings" && (
-                <section className="admin-card">
-                  <div className="sp-section-header" style={{ marginBottom: 20 }}>
-                    <h2>All Bookings</h2>
-                  </div>
+                <section className="admin-card" style={{ gridColumn: "1 / -1" }}>
+                  <h2 style={{ marginBottom: 20 }}>All Bookings</h2>
                   <BookingsTable gameId={gameId} tickets={bookedTickets} />
                 </section>
               )}
 
-              {/* ── Winners Route ── */}
-              {activeRoute === "winners" && (
-                <section className="admin-card" id="section-winners">
-                  <h2 style={{ marginBottom: 20 }}>Winners</h2>
-                  {WIN_TYPES.map(type => {
-                    const w = game?.winners?.[type];
-                    return (
-                      <div key={type} className={`winner-admin-row ${w ? "won" : ""}`}>
-                        <span>{WIN_LABELS[type]}</span>
-                        {w
-                          ? <span className="winner-name">{w.userName} <small>({w.ticketId})</small></span>
-                          : <span className="pending-text">Pending</span>
-                        }
-                      </div>
-                    );
-                  })}
-                </section>
-              )}
-
-              {/* ── Past Games Route ── */}
+              {/* ── PAST GAMES ── */}
               {activeRoute === "past" && (
-                <section className="admin-card">
+                <section className="admin-card" style={{ gridColumn: "1 / -1" }}>
                   <h2 style={{ marginBottom: 20 }}>Past Games</h2>
                   <PastWinnersTable />
                 </section>
@@ -678,8 +639,6 @@ export default function AdminPage() {
 
             </div>
           </div>
-
-
         </div>
       </div>
     </div>
