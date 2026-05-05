@@ -7,8 +7,8 @@ import {
   subscribeTickets,
   buildWhatsAppLink,
 } from "./lib/gameStore";
-import {  formatGameId } from "./lib/tambola";
-import {announceNumber, preloadAudio, initAudio, playGameStartCountdown, playAudioFile, playAudioFileLooping, stopLoopingAudio} from "./lib/audioManager";
+import { formatGameId } from "./lib/tambola";
+import { announceNumber, preloadAudio, initAudio, playGameStartCountdown, playAudioFile, playAudioFileLooping, stopLoopingAudio } from "./lib/audioManager";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
@@ -130,8 +130,8 @@ export default function GamePage() {
   }, [game?.status]);
 
   // ── Game-start countdown + outro loop ───────────────────────────────
-  const prevStatusRef  = useRef(null);
-  const outroTimerRef  = useRef(null);   // track pending delay so we can cancel it
+  const prevStatusRef = useRef(null);
+  const outroTimerRef = useRef(null);   // track pending delay so we can cancel it
   useEffect(() => {
     const prev = prevStatusRef.current;
     const curr = game?.status ?? null;
@@ -157,62 +157,62 @@ export default function GamePage() {
 
   // ── Winner Toast Notification ─────────────────────────────────────────
 
- useEffect(() => {
-  if (!game) {
-    prevWinnersRef.current = null;
-    return;
-  }
-
-  const currentWinners = game.winners || {};
-  const prevWinners = prevWinnersRef.current || {};
-
-  const winLabels = {
-    topLine:    "the Top Line",
-    middleLine: "the Middle Line",
-    lastLine:   "the Last Line",
-    quickSeven: "Quick 7",
-    fullHouse:  "a Full House",
-  };
-
-  // Find the type that newly changed
-  let changedType = null;
-  for (const type of Object.keys(currentWinners)) {
-    const curr = Array.isArray(currentWinners[type])
-      ? currentWinners[type]
-      : currentWinners[type] ? [currentWinners[type]] : [];
-
-    const prev = Array.isArray(prevWinners[type])
-      ? prevWinners[type]
-      : prevWinners[type] ? [prevWinners[type]] : [];
-
-    if (curr.length > prev.length) {
-      changedType = type;
-      break;
+  useEffect(() => {
+    if (!game) {
+      prevWinnersRef.current = null;
+      return;
     }
-  }
 
-  prevWinnersRef.current = currentWinners;
+    const currentWinners = game.winners || {};
+    const prevWinners = prevWinnersRef.current || {};
 
-  if (!changedType) return;
+    const winLabels = {
+      topLine: "the Top Line",
+      middleLine: "the Middle Line",
+      lastLine: "the Last Line",
+      quickSeven: "Quick 7",
+      fullHouse: "a Full House",
+    };
 
-  // Play winner sound for any newly claimed prize
-  playAudioFile("winner.mp3");
+    // Find the type that newly changed
+    let changedType = null;
+    for (const type of Object.keys(currentWinners)) {
+      const curr = Array.isArray(currentWinners[type])
+        ? currentWinners[type]
+        : currentWinners[type] ? [currentWinners[type]] : [];
 
-  // Use changedType directly — not re-scanning all winners
-  const timer = setTimeout(() => {
-    const w = currentWinners[changedType];
-    const curr = Array.isArray(w) ? w : w ? [w] : [];
-    if (curr.length === 0) return;
+      const prev = Array.isArray(prevWinners[type])
+        ? prevWinners[type]
+        : prevWinners[type] ? [prevWinners[type]] : [];
 
-    const label = winLabels[changedType] || changedType;
-    const names = curr.map(w => w.userName).join(" & ");
-    const tied = curr.length > 1;
-    setToast({ id: Date.now(), user: names, label, tied });
-    setTimeout(() => setToast(null), 10000);
-  }, 0);
+      if (curr.length > prev.length) {
+        changedType = type;
+        break;
+      }
+    }
 
-  return () => clearTimeout(timer);
-}, [game?.winners]);
+    prevWinnersRef.current = currentWinners;
+
+    if (!changedType) return;
+
+    // Play winner sound for any newly claimed prize
+    playAudioFile("winner.mp3");
+
+    // Use changedType directly — not re-scanning all winners
+    const timer = setTimeout(() => {
+      const w = currentWinners[changedType];
+      const curr = Array.isArray(w) ? w : w ? [w] : [];
+      if (curr.length === 0) return;
+
+      const label = winLabels[changedType] || changedType;
+      const names = curr.map(w => w.userName).join(" & ");
+      const tied = curr.length > 1;
+      setToast({ id: Date.now(), user: names, label, tied });
+      setTimeout(() => setToast(null), 10000);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [game?.winners]);
 
   // ── Ticket selection helpers ──────────────────────────────────────────
   function toggleTicketSelect(ticketId) {
@@ -231,9 +231,9 @@ export default function GamePage() {
   }
 
   // ── Derived values ────────────────────────────────────────────────────
-  const ticketList = Object.values(tickets).sort((a, b) => 
-  parseInt(a.id.slice(1)) - parseInt(b.id.slice(1))
-);
+  const ticketList = Object.values(tickets).sort((a, b) =>
+    parseInt(a.id.slice(1)) - parseInt(b.id.slice(1))
+  );
   const freeCount = ticketList.filter(t => t.status === "free").length;
   const bookedCount = ticketList.filter(t => t.status === "booked").length;
 
@@ -254,10 +254,10 @@ export default function GamePage() {
   };
   const status = STATUS_MAP[game?.status] || STATUS_MAP.waiting;
   const fullHouseWinners = game?.winners?.fullHouse
-  ? Array.isArray(game.winners.fullHouse)
-    ? game.winners.fullHouse
-    : [game.winners.fullHouse]
-  : [];
+    ? Array.isArray(game.winners.fullHouse)
+      ? game.winners.fullHouse
+      : [game.winners.fullHouse]
+    : [];
 
   function chunkArray(arr, size) {
     const result = [];
@@ -327,7 +327,7 @@ export default function GamePage() {
       </header>
 
       <div>
-        <img className="tambola-banner" src="/assets/banner.webp" alt="Welcome to Housie" />
+        <img className="tambola-banner" src="/assets/banner2.webp" alt="Welcome to Housie" />
       </div>
 
       {/* Scheduled countdown banner */}
@@ -374,20 +374,20 @@ export default function GamePage() {
         <main className="victory-screen">
           <div className="victory-content">
             {fullHouseWinners.length > 0 && (
-  <>
-    <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
-    <h2 className="victory-title">FULL HOUSE!</h2>
-            {fullHouseWinners.map((winner, i) => (
-                <div key={i} className="victory-winner-card">
-                  <p className="victory-label">
-                    {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
-                  </p>
-                  <p className="victory-name">{winner.userName}</p>
-                  <p className="victory-ticket">{winner.ticketId}</p>
-                </div>
-              ))}
-            </>
-          )}
+              <>
+                <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
+                <h2 className="victory-title">FULL HOUSE!</h2>
+                {fullHouseWinners.map((winner, i) => (
+                  <div key={i} className="victory-winner-card">
+                    <p className="victory-label">
+                      {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
+                    </p>
+                    <p className="victory-name">{winner.userName}</p>
+                    <p className="victory-ticket">{winner.ticketId}</p>
+                  </div>
+                ))}
+              </>
+            )}
 
             <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
               <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
@@ -423,7 +423,7 @@ export default function GamePage() {
 
               {
                 game?.status === "waiting" && (
-                   <div className="filter-tabs">
+                  <div className="filter-tabs">
                     {["all", "free", "booked"].map((f) => (
                       <button
                         key={f}
@@ -436,10 +436,10 @@ export default function GamePage() {
                             `Booked (${bookedCount})`}
                       </button>
                     ))}
-                  </div>  
+                  </div>
                 )
               }
-             
+
             </div>
 
             {/* Multi-select instruction */}
@@ -450,17 +450,17 @@ export default function GamePage() {
             )} */}
 
             {game?.rules && (
-                <div className="active-rules-bar">
-                  <span className="active-rules-label">💡 Active prizes:</span>
-                  {["topLine","middleLine","lastLine","quickSeven","fullHouse"].map(r =>
-                    game.rules[r] ? (
-                        <span key={r} className="active-rule-chip">
-                          {{ topLine:"🎯 Top Line", middleLine:"🎯 Middle Line", lastLine:"🎯 Last Line", quickSeven:"⚡ Quick 7", fullHouse:"🏆 Full House" }[r]}
-                        </span>
-                    ) : null
-                  )}
-                </div>
-              )}
+              <div className="active-rules-bar">
+                <span className="active-rules-label">💡 Active prizes:</span>
+                {["topLine", "middleLine", "lastLine", "quickSeven", "fullHouse"].map(r =>
+                  game.rules[r] ? (
+                    <span key={r} className="active-rule-chip">
+                      {{ topLine: "🎯 Top Line", middleLine: "🎯 Middle Line", lastLine: "🎯 Last Line", quickSeven: "⚡ Quick 7", fullHouse: "🏆 Full House" }[r]}
+                    </span>
+                  ) : null
+                )}
+              </div>
+            )}
 
             {/* Ticket sheets */}
             <div className="tickets-sheets-container">
@@ -492,8 +492,8 @@ export default function GamePage() {
       )}
       {/* Floating winners panel — visible during live game and after */}
       {game && game.status !== "waiting" && (
-          <WinnersPanel winners={game.winners || {}} gameRules={game.rules || {}} />
-        )}
+        <WinnersPanel winners={game.winners || {}} gameRules={game.rules || {}} />
+      )}
     </div>
   );
 }
