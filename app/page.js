@@ -334,7 +334,7 @@ export default function GamePage() {
               </p>
             </div>
 
-            <WinnersPanel winners={game.winners || {}} />
+            {/* <WinnersPanel winners={game.winners || {}} /> */}
             <Link
               href="/winners"
               className="admin-btn primary"
@@ -348,9 +348,9 @@ export default function GamePage() {
         <main className="main-layout">
           <aside className="sidebar">
             <NumberBoard calledNumbers={game.calledNumbers || []} />
-            {
+            {/* {
               game?.status === "live" && <WinnersPanel winners={game.winners || {}} />
-            }
+            } */}
             
           </aside>
 
@@ -395,11 +395,18 @@ export default function GamePage() {
             {game?.rules && (
                 <div className="active-rules-bar">
                   <span className="active-rules-label">💡 Active prizes:</span>
-                  {["topLine","middleLine","lastLine","fullHouse"].map(r =>
+                  {/* {["topLine","middleLine","lastLine","fullHouse"].map(r =>
                     game.rules[r] ? (
                       <span key={r} className="active-rule-chip">
-                        💡{{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
+                        {{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
                       </span>
+                    ) : null
+                  )} */}
+                  {["topLine","middleLine","lastLine","quickSeven","fullHouse"].map(r =>
+                    game.rules[r] ? (
+                        <span key={r} className="active-rule-chip">
+                          {{ topLine:"🎯 Top Line", middleLine:"🎯 Middle Line", lastLine:"🎯 Last Line", quickSeven:"⚡ Quick 7", fullHouse:"🏆 Full House" }[r]}
+                        </span>
                     ) : null
                   )}
                 </div>
@@ -435,8 +442,8 @@ export default function GamePage() {
       )}
       {/* Floating winners panel — visible during live game and after */}
       {game && game.status !== "waiting" && (
-        <WinnersPanel winners={game.winners || {}} />
-      )}
+          <WinnersPanel winners={game.winners || {}} gameRules={game.rules || {}} />
+        )}
     </div>
   );
 }

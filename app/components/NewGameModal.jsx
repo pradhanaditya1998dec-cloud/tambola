@@ -3,31 +3,17 @@
 import { useState } from "react";
 
 const RULE_CONFIG = [
-  {
-    key: "topLine",
-    label: "Top Line",
-    icon: "🎯",
-    desc: "First row of a ticket fully marked",
-  },
-  {
-    key: "middleLine",
-    label: "Middle Line",
-    icon: "🎯",
-    desc: "Second row of a ticket fully marked",
-  },
-  {
-    key: "lastLine",
-    label: "Last Line",
-    icon: "🎯",
-    desc: "Third row of a ticket fully marked",
-  },
+  { key: "topLine",    label: "Top Line",    icon: "🎯", desc: "First row of a ticket fully marked" },
+  { key: "middleLine", label: "Middle Line", icon: "🎯", desc: "Second row of a ticket fully marked" },
+  { key: "lastLine",   label: "Last Line",   icon: "🎯", desc: "Third row of a ticket fully marked" },
+  { key: "quickSeven", label: "Quick 7",     icon: "⚡", desc: "First ticket to have 7 numbers called wins" },
 ];
 
 export default function NewGameModal({ open, onConfirm, onCancel }) {
   const [ticketCount, setTicketCount] = useState(50);
   const [sheetSize, setSheetSize]     = useState(6);
   const [rules, setRules] = useState({
-    topLine: true, middleLine: true, lastLine: true,
+    topLine: true, middleLine: true, lastLine: true, quickSeven: true,
   });
   const [error, setError] = useState("");
 

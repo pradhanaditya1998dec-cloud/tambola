@@ -431,10 +431,17 @@ export default function AdminPage() {
                   {game?.rules && (
                     <div className="active-rules-bar">
                       <span className="active-rules-label">Active prizes:</span>
-                      {["topLine","middleLine","lastLine","fullHouse"].map(r =>
+                      {/* {["topLine","middleLine","lastLine","fullHouse"].map(r =>
                         game.rules[r] ? (
                           <span key={r} className="active-rule-chip">
                             {{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
+                          </span>
+                        ) : null
+                      )} */}
+                      {["topLine","middleLine","lastLine","quickSeven","fullHouse"].map(r =>
+                        game.rules[r] ? (
+                          <span key={r} className="active-rule-chip">
+                            {{ topLine:"🎯 Top Line", middleLine:"🎯 Middle Line", lastLine:"🎯 Last Line", quickSeven:"⚡ Quick 7", fullHouse:"🏆 Full House" }[r]}
                           </span>
                         ) : null
                       )}

@@ -320,6 +320,17 @@ export function generate50Tickets() {
   return generateTickets(50, 6);
 }
 
+// export function checkWinners(flatNumbers, calledNumbers) {
+//   const called = new Set(calledNumbers);
+//   const grid = reconstructGrid(flatNumbers);
+//   const checkRow = (row) => row.filter(n => n !== 0).every(n => called.has(n));
+//   const topLine    = checkRow(grid[0]);
+//   const middleLine = checkRow(grid[1]);
+//   const lastLine   = checkRow(grid[2]);
+//   return { topLine, middleLine, lastLine, fullHouse: topLine && middleLine && lastLine };
+// }
+
+
 export function checkWinners(flatNumbers, calledNumbers) {
   const called = new Set(calledNumbers);
   const grid = reconstructGrid(flatNumbers);
@@ -327,7 +338,12 @@ export function checkWinners(flatNumbers, calledNumbers) {
   const topLine    = checkRow(grid[0]);
   const middleLine = checkRow(grid[1]);
   const lastLine   = checkRow(grid[2]);
-  return { topLine, middleLine, lastLine, fullHouse: topLine && middleLine && lastLine };
+
+  // Quick 7: at least 7 numbers on this ticket have been called
+  const allNums = flatNumbers.filter(n => n !== 0);
+  const quickSeven = allNums.filter(n => called.has(n)).length >= 7;
+
+  return { topLine, middleLine, lastLine, quickSeven, fullHouse: topLine && middleLine && lastLine };
 }
 
 export function generateGameId() {
@@ -365,10 +381,11 @@ export function getTodayGameId() {
 
 export { announceNumber, preloadAudio, initAudio } from "./audioManager";
 
-export const WIN_TYPES = ["topLine", "middleLine", "lastLine", "fullHouse"];
+export const WIN_TYPES = ["topLine", "middleLine", "lastLine", "quickSeven", "fullHouse"];
 export const WIN_LABELS = {
   topLine:    "🎯 Top Line",
   middleLine: "🎯 Middle Line",
   lastLine:   "🎯 Last Line",
+  quickSeven: "⚡ Quick 7",
   fullHouse:  "🏆 Full House",
 };

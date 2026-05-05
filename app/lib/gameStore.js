@@ -26,6 +26,7 @@ export async function initTodayGame(gameId, rules = {}) {
       topLine:    rules.topLine    ?? true,
       middleLine: rules.middleLine ?? true,
       lastLine:   rules.lastLine   ?? true,
+      quickSeven: rules.quickSeven ?? true, 
       fullHouse:  true, // always enabled
     },
   });

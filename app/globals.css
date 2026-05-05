@@ -315,7 +315,7 @@ a {
 /* Has at least one winner — green tint */
 .winners-fab.winners-fab-active {
   border-color: rgba(62, 207, 142, 0.4);
-  background: rgba(62, 207, 142, 0.08);
+  background: var(--card);
 }
 
 /* Full house — gold */
