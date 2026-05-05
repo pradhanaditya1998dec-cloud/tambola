@@ -10,13 +10,16 @@ export default function BookTicket({ gameId, freeTickets, onBooked }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+
+  const sortedTickets = [...freeTickets].sort((a, b) => parseInt(a.id.slice(1)) - parseInt(b.id.slice(1)));
+
   function toggleTicket(id) {
     setSelectedTickets(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   }
 
-  function selectAll() { setSelectedTickets(freeTickets.map(t => t.id)); }
+ function selectAll() { setSelectedTickets(sortedTickets.map(t => t.id)); }
   function clearAll() { setSelectedTickets([]); }
 
   async function handleBook() {
@@ -43,7 +46,7 @@ export default function BookTicket({ gameId, freeTickets, onBooked }) {
     <div className="sp-section">
       <div className="sp-section-header">
         <h3 className="sp-section-title">Book Tickets</h3>
-        {freeTickets.length > 0 && (
+        {sortedTickets.length > 0 && (
           <div className="sp-row-gap">
             <button onClick={selectAll} className="sp-link-btn">Select All</button>
             {selectedTickets.length > 0 && (
@@ -63,7 +66,7 @@ export default function BookTicket({ gameId, freeTickets, onBooked }) {
 
       {/* Ticket pills */}
       <div className="sp-ticket-grid">
-        {freeTickets.map(t => (
+        {sortedTickets.map(t => (
           <button
             key={t.id}
             onClick={() => toggleTicket(t.id)}
@@ -72,7 +75,7 @@ export default function BookTicket({ gameId, freeTickets, onBooked }) {
             {t.id}
           </button>
         ))}
-        {freeTickets.length === 0 && (
+        {sortedTickets.length === 0 && (
           <p className="sp-empty">All tickets are booked!</p>
         )}
       </div>
