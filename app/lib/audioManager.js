@@ -114,6 +114,71 @@ export function initAudio() {
 }
 
 /**
+ * Play any audio file once from the /audio/ directory (e.g. "winner.mp3").
+ * Reuses the same managed <audio> element so iOS unlock is respected.
+ */
+export function playAudioFile(filename) {
+  if (typeof window === "undefined") return;
+  if (!unlocked) return;
+
+  if (!audioEl) return;
+  // Stop looping audio first so they don't clash
+  stopLoopingAudio();
+
+  const wasPlaying = !audioEl.paused;
+  if (wasPlaying) {
+    audioEl.onended = null;
+    audioEl.pause();
+  }
+  audioEl.loop = false;
+  audioEl.currentTime = 0;
+  audioEl.src = `/audio/${filename}`;
+  audioEl.load();
+  const p = audioEl.play();
+  if (p !== undefined) {
+    p.catch(err => {
+      if (err.name !== "AbortError") {
+        console.warn(`Audio play failed for ${filename}:`, err.name, err.message);
+      }
+    });
+  }
+}
+
+// Dedicated element for looping background audio (outro etc.)
+let loopEl = null;
+
+/**
+ * Play a file in a continuous loop until stopLoopingAudio() is called.
+ * Uses a separate <audio> element so number announcements still work.
+ */
+export function playAudioFileLooping(filename) {
+  if (typeof window === "undefined") return;
+  if (!unlocked) return;
+
+  // Stop any existing loop first
+  stopLoopingAudio();
+
+  loopEl = new Audio(`/audio/${filename}`);
+  loopEl.loop = true;
+  loopEl.volume = 1;
+  loopEl.play().catch(err => {
+    if (err.name !== "AbortError") {
+      console.warn(`Looping audio failed for ${filename}:`, err.name, err.message);
+    }
+  });
+}
+
+/**
+ * Stop the looping audio started by playAudioFileLooping().
+ */
+export function stopLoopingAudio() {
+  if (!loopEl) return;
+  loopEl.pause();
+  loopEl.currentTime = 0;
+  loopEl = null;
+}
+
+/**
  * Play the announcement for a drawn number.
  * Safe to call before any user gesture — the number will play
  * as soon as the user taps anything on the page.
@@ -128,6 +193,38 @@ export function announceNumber(n) {
   }
 
   playFile(n);
+}
+
+/**
+ * Play a "Game starts in 5, 4, 3, 2, 1, Game Start!" countdown
+ * using the browser's built-in SpeechSynthesis API.
+ * No extra audio files required.
+ */
+export function playGameStartCountdown() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+  // Cancel any ongoing speech first
+  window.speechSynthesis.cancel();
+
+  const words = ["Game starts in", "5", "4", "3", "2", "1", "Game Start!"];
+  let i = 0;
+
+  function speakNext() {
+    if (i >= words.length) return;
+    const utt = new SpeechSynthesisUtterance(words[i]);
+    utt.rate  = i === 0 ? 0.95 : 1.1;   // opener a bit slower, digits crisp
+    utt.pitch = i === words.length - 1 ? 1.3 : 1.0; // final "Game Start!" higher
+    utt.volume = 1;
+    utt.onend = () => {
+      i++;
+      // Short gap between words for dramatic effect
+      const delay = i === 1 ? 100 : i < words.length ? 200 : 0;
+      setTimeout(speakNext, delay);
+    };
+    window.speechSynthesis.speak(utt);
+  }
+
+  speakNext();
 }
 
 /**

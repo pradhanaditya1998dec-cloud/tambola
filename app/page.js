@@ -8,7 +8,7 @@ import {
   buildWhatsAppLink,
 } from "./lib/gameStore";
 import {  formatGameId } from "./lib/tambola";
-import {announceNumber, preloadAudio, initAudio} from "./lib/audioManager";
+import {announceNumber, preloadAudio, initAudio, playGameStartCountdown, playAudioFile, playAudioFileLooping, stopLoopingAudio} from "./lib/audioManager";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
@@ -36,6 +36,7 @@ export default function GamePage() {
   const countdownRef = useRef(null);
   const prevWinnersRef = useRef(null);
   const prevCalled = useRef([]);
+  const isInitialLoad = useRef(true);
 
   // Unsubscribe refs — cleaned up when gameId changes
   const unsubGameRef = useRef(null);
@@ -67,9 +68,14 @@ export default function GamePage() {
     setTickets({});
     setSelectedTickets([]);
     prevCalled.current = [];
+    isInitialLoad.current = true;
     setLoading(true);
 
     unsubGameRef.current = subscribeGame(gameId, (data) => {
+      if (isInitialLoad.current) {
+        prevCalled.current = data?.calledNumbers || [];
+        isInitialLoad.current = false;
+      }
       setGame(data);
       setLoading(false);
     });
@@ -90,10 +96,12 @@ export default function GamePage() {
     const prev = new Set(prevCalled.current);
     const newNums = game.calledNumbers.filter((n) => !prev.has(n));
     if (newNums.length) {
-      announceNumber(newNums[newNums.length - 1]);
+      if (game.status !== "closed") {
+        announceNumber(newNums[newNums.length - 1]);
+      }
       prevCalled.current = game.calledNumbers;
     }
-  }, [game?.calledNumbers]);
+  }, [game?.calledNumbers, game?.status]);
 
   // ── Countdown to scheduled start ──────────────────────────────────────
   useEffect(() => {
@@ -121,50 +129,25 @@ export default function GamePage() {
     if (game?.status === "live") setSelectedTickets([]);
   }, [game?.status]);
 
-  // ── Winner Toast Notification ─────────────────────────────────────────
-  // useEffect(() => {
-  //   if (!game) {
-  //     prevWinnersRef.current = null;
-  //     return;
-  //   }
-
-  //   const currentWinners = game.winners || {};
-
-  //   if (prevWinnersRef.current) {
-  //     const newWinTypes = Object.keys(currentWinners).filter(
-  //       type => !prevWinnersRef.current[type] && currentWinners[type]
-  //     );
-
-  //     if (newWinTypes.length > 0) {
-  //       const type = newWinTypes[0];
-  //       const winner = currentWinners[type];
-
-  //       const winLabels = {
-  //         topLine: "the Top Line",
-  //         middleLine: "the Middle Line",
-  //         lastLine: "the Last Line",
-  //         fullHouse: "a Full House"
-  //       };
-
-  //       const label = winLabels[type] || type;
-
-  //       setToast({
-  //         id: Date.now(),
-  //         user: winner.userName,
-  //         label
-  //       });
-
-  //       setTimeout(() => {
-  //         setToast(null);
-  //       }, 100000);
-  //     }
-  //   }
-
-  //   prevWinnersRef.current = currentWinners;
-  // }, [game?.winners]);
-
-
+  // ── Game-start countdown announcement ───────────────────────────────
+  const prevStatusRef = useRef(null);
   useEffect(() => {
+    const prev = prevStatusRef.current;
+    const curr = game?.status ?? null;
+    if (curr === "live" && prev !== "live") {
+      stopLoopingAudio();          // stop outro loop if a new game starts
+      playGameStartCountdown();
+    }
+    if (curr === "closed" && prev !== "closed" && prev !== null) {
+      // Short delay so speech synthesis doesn't overlap
+      setTimeout(() => playAudioFileLooping("outro.mp3"), 800);
+    }
+    prevStatusRef.current = curr;
+  }, [game?.status]);
+
+  // ── Winner Toast Notification ─────────────────────────────────────────
+
+ useEffect(() => {
   if (!game) {
     prevWinnersRef.current = null;
     return;
@@ -181,7 +164,8 @@ export default function GamePage() {
     fullHouse:  "a Full House",
   };
 
-  let changed = false;
+  // Find the type that newly changed
+  let changedType = null;
   for (const type of Object.keys(currentWinners)) {
     const curr = Array.isArray(currentWinners[type])
       ? currentWinners[type]
@@ -192,32 +176,29 @@ export default function GamePage() {
       : prevWinners[type] ? [prevWinners[type]] : [];
 
     if (curr.length > prev.length) {
-      changed = true;
+      changedType = type;
       break;
     }
   }
 
   prevWinnersRef.current = currentWinners;
 
-  if (!changed) return;
+  if (!changedType) return;
 
-  // Debounce: wait 1.5s for all tied winner writes to land
-  // before reading the final state and showing the toast
+  // Play winner sound for any newly claimed prize
+  playAudioFile("winner.mp3");
+
+  // Use changedType directly — not re-scanning all winners
   const timer = setTimeout(() => {
-    for (const type of Object.keys(currentWinners)) {
-      const curr = Array.isArray(currentWinners[type])
-        ? currentWinners[type]
-        : currentWinners[type] ? [currentWinners[type]] : [];
+    const w = currentWinners[changedType];
+    const curr = Array.isArray(w) ? w : w ? [w] : [];
+    if (curr.length === 0) return;
 
-      if (curr.length > 0) {
-        const label = winLabels[type] || type;
-        const names = curr.map(w => w.userName).join(" & ");
-        const tied = curr.length > 1;
-        setToast({ id: Date.now(), user: names, label, tied });
-        setTimeout(() => setToast(null), 10000);
-        break;
-      }
-    }
+    const label = winLabels[changedType] || changedType;
+    const names = curr.map(w => w.userName).join(" & ");
+    const tied = curr.length > 1;
+    setToast({ id: Date.now(), user: names, label, tied });
+    setTimeout(() => setToast(null), 10000);
   }, 0);
 
   return () => clearTimeout(timer);
