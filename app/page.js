@@ -148,7 +148,7 @@ export default function GamePage() {
 
     if (curr === "closed" && prev !== "closed" && prev !== null) {
       // Delay so speech synthesis doesn't overlap; store ID so we can cancel it
-      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.mp3"), 800);
+      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.mp3", 0.3), 800);
     }
 
     prevStatusRef.current = curr;

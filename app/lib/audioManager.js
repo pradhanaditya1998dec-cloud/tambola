@@ -151,7 +151,7 @@ let loopEl = null;
  * Play a file in a continuous loop until stopLoopingAudio() is called.
  * Uses a separate <audio> element so number announcements still work.
  */
-export function playAudioFileLooping(filename) {
+export function playAudioFileLooping(filename, volume = 1) {
   if (typeof window === "undefined") return;
   if (!unlocked) return;
 
@@ -160,7 +160,7 @@ export function playAudioFileLooping(filename) {
 
   loopEl = new Audio(`/audio/${filename}`);
   loopEl.loop = true;
-  loopEl.volume = 1;
+  loopEl.volume = volume;
   loopEl.play().catch(err => {
     if (err.name !== "AbortError") {
       console.warn(`Looping audio failed for ${filename}:`, err.name, err.message);
