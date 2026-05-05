@@ -331,20 +331,25 @@ export function checkWinners(flatNumbers, calledNumbers) {
 }
 
 export function generateGameId() {
-  const now  = new Date();
-  const date = now.toISOString().split("T")[0];
-  const h    = String(now.getHours()).padStart(2, "0");
-  const m    = String(now.getMinutes()).padStart(2, "0");
-  return `${date}_${h}-${m}`;
+  const now = new Date();
+  const y   = now.getFullYear();
+  const mo  = String(now.getMonth() + 1).padStart(2, "0");
+  const d   = String(now.getDate()).padStart(2, "0");
+  const h   = String(now.getHours()).padStart(2, "0");
+  const m   = String(now.getMinutes()).padStart(2, "0");
+  return `${y}-${mo}-${d}_${h}-${m}`;
 }
 
 export function formatGameId(gameId) {
   if (!gameId) return "";
   const [datePart, timePart] = gameId.split("_");
-  const date    = new Date(datePart);
-  const dateStr = date.toLocaleDateString("en-IN", {
+  
+  // Parse date parts directly to avoid UTC shift
+  const [y, m, d] = datePart.split("-").map(Number);
+  const dateStr = new Date(y, m - 1, d).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
+
   if (!timePart) return dateStr;
   const [h, mn] = timePart.split("-").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";

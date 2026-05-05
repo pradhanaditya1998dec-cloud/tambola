@@ -162,18 +162,28 @@ export function buildWhatsAppLink(ticketIds, adminPhone) {
 
 // ── Game ID helpers ────────────────────────────────────────
 export function generateGameId() {
-  return new Date().toISOString().replace("T", "_").replace(/:/g, "-").slice(0, 16);
+  const now = new Date();
+  const y   = now.getFullYear();
+  const mo  = String(now.getMonth() + 1).padStart(2, "0");
+  const d   = String(now.getDate()).padStart(2, "0");
+  const h   = String(now.getHours()).padStart(2, "0");
+  const m   = String(now.getMinutes()).padStart(2, "0");
+  return `${y}-${mo}-${d}_${h}-${m}`;
 }
 
-export function formatGameId(id) {
-  if (!id) return "";
-  try {
-    const [datePart, timePart] = id.split("_");
-    const [y, m, d] = datePart.split("-");
-    const [h, min] = (timePart || "00-00").split("-");
-    return new Date(+y, +m - 1, +d, +h, +min).toLocaleString([], {
-      month: "short", day: "numeric", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  } catch { return id; }
+export function formatGameId(gameId) {
+  if (!gameId) return "";
+  const [datePart, timePart] = gameId.split("_");
+  
+  // Parse date parts directly to avoid UTC shift
+  const [y, m, d] = datePart.split("-").map(Number);
+  const dateStr = new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+
+  if (!timePart) return dateStr;
+  const [h, mn] = timePart.split("-").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${dateStr} · ${hour}:${String(mn).padStart(2, "0")} ${ampm}`;
 }
