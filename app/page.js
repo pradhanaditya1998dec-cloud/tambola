@@ -412,6 +412,22 @@ export default function GamePage() {
           </aside>
 
           <section className="tickets-section">
+
+            
+            {game?.rules && (
+              <div className="active-rules-bar">
+                <span className="active-rules-label">💡 Active prizes:</span>
+                {["topLine", "middleLine", "lastLine", "quickSeven", "fullHouse"].map(r =>
+                  game.rules[r] ? (
+                    <span key={r} className="active-rule-chip">
+                      {{ topLine: "🎯 Top Line", middleLine: "🎯 Middle Line", lastLine: "🎯 Last Line", quickSeven: "⚡ Quick 7", fullHouse: "🏆 Full House" }[r]}
+                    </span>
+                  ) : null
+                )}
+              </div>
+            )}
+
+
             {/* Toolbar */}
             <div className="tickets-toolbar">
               <input
@@ -442,25 +458,6 @@ export default function GamePage() {
 
             </div>
 
-            {/* Multi-select instruction */}
-            {/* {game?.status === "waiting" && filter !== "booked" && (
-              <div className="multiselect-hint">
-                💡 Tap tickets to select multiple, then send a single WhatsApp booking request
-              </div>
-            )} */}
-
-            {game?.rules && (
-              <div className="active-rules-bar">
-                <span className="active-rules-label">💡 Active prizes:</span>
-                {["topLine", "middleLine", "lastLine", "quickSeven", "fullHouse"].map(r =>
-                  game.rules[r] ? (
-                    <span key={r} className="active-rule-chip">
-                      {{ topLine: "🎯 Top Line", middleLine: "🎯 Middle Line", lastLine: "🎯 Last Line", quickSeven: "⚡ Quick 7", fullHouse: "🏆 Full House" }[r]}
-                    </span>
-                  ) : null
-                )}
-              </div>
-            )}
 
             {/* Ticket sheets */}
             <div className="tickets-sheets-container">
