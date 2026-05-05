@@ -97,6 +97,12 @@ export async function recordWinner(gameId, winType, ticketId, userName, userPhon
   });
 }
 
+export async function recordAllWinners(gameId, winType, winnersArray) {
+  await updateDoc(doc(db, "games", gameId), {
+    [`winners.${winType}`]: winnersArray, // single write, replaces entire array at once
+  });
+}
+
 // ── Ticket booking ─────────────────────────────────────────
 export async function bookTicket(gameId, ticketId, { userName, userPhone }) {
   await updateDoc(doc(db, "games", gameId, "tickets", ticketId), {

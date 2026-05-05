@@ -6,6 +6,7 @@ import {
   initTodayGame, initTickets, callNumber, setGameStatus,
   bookMultipleTickets, recordWinner, setScheduledTime,
   generateGameId, formatGameId,
+  recordAllWinners,
 } from "../lib/gameStore";
 import { checkWinners, WIN_TYPES, WIN_LABELS, announceNumber } from "../lib/tambola";
 import { auth } from "../lib/firebase";
@@ -165,10 +166,17 @@ useEffect(() => {
       if (winners.length === 0) continue;
 
       // Record all tied winners sequentially (not in parallel)
-      for (const ticket of winners) {
-        await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
-        success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
-      }
+      // for (const ticket of winners) {
+      //   await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
+      //   success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
+      // }
+
+      await recordAllWinners(gameId, type, winners.map(t => ({
+        ticketId: t.id,
+        userName: t.userName,
+        userPhone: t.userPhone || null,
+        claimedAt: Date.now(),
+      })));
 
       if (type === "fullHouse") {
         stopAutoDraw();

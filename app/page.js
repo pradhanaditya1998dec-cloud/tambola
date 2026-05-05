@@ -171,41 +171,56 @@ export default function GamePage() {
   }
 
   const currentWinners = game.winners || {};
+  const prevWinners = prevWinnersRef.current || {};
 
-  if (prevWinnersRef.current) {
-    const newWinTypes = Object.keys(currentWinners).filter(
-      type => !prevWinnersRef.current[type] && currentWinners[type]
-    );
+  const winLabels = {
+    topLine:    "the Top Line",
+    middleLine: "the Middle Line",
+    lastLine:   "the Last Line",
+    quickSeven: "Quick 7",
+    fullHouse:  "a Full House",
+  };
 
-    if (newWinTypes.length > 0) {
-      const type = newWinTypes[0];
-      const winnerData = currentWinners[type];
+  let changed = false;
+  for (const type of Object.keys(currentWinners)) {
+    const curr = Array.isArray(currentWinners[type])
+      ? currentWinners[type]
+      : currentWinners[type] ? [currentWinners[type]] : [];
 
-      // Handle both array (tied) and single object (legacy)
-      const winnerList = Array.isArray(winnerData) ? winnerData : [winnerData];
+    const prev = Array.isArray(prevWinners[type])
+      ? prevWinners[type]
+      : prevWinners[type] ? [prevWinners[type]] : [];
 
-      const winLabels = {
-        topLine:    "the Top Line",
-        middleLine: "the Middle Line",
-        lastLine:   "the Last Line",
-        quickSeven: "Quick 7",
-        fullHouse:  "a Full House",
-      };
-      const label = winLabels[type] || type;
-
-      if (winnerList.length === 1) {
-        setToast({ id: Date.now(), user: winnerList[0].userName, label, tied: false });
-      } else {
-        // Tied winners — join names
-        const names = winnerList.map(w => w.userName).join(" & ");
-        setToast({ id: Date.now(), user: names, label, tied: true });
-      }
-
-      setTimeout(() => setToast(null), 10000);
+    if (curr.length > prev.length) {
+      changed = true;
+      break;
     }
   }
 
   prevWinnersRef.current = currentWinners;
+
+  if (!changed) return;
+
+  // Debounce: wait 1.5s for all tied winner writes to land
+  // before reading the final state and showing the toast
+  const timer = setTimeout(() => {
+    for (const type of Object.keys(currentWinners)) {
+      const curr = Array.isArray(currentWinners[type])
+        ? currentWinners[type]
+        : currentWinners[type] ? [currentWinners[type]] : [];
+
+      if (curr.length > 0) {
+        const label = winLabels[type] || type;
+        const names = curr.map(w => w.userName).join(" & ");
+        const tied = curr.length > 1;
+        setToast({ id: Date.now(), user: names, label, tied });
+        setTimeout(() => setToast(null), 10000);
+        break;
+      }
+    }
+  }, 0);
+
+  return () => clearTimeout(timer);
 }, [game?.winners]);
 
   // ── Ticket selection helpers ──────────────────────────────────────────
@@ -372,16 +387,16 @@ export default function GamePage() {
     <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
     <h2 className="victory-title">FULL HOUSE!</h2>
             {fullHouseWinners.map((winner, i) => (
-              <div key={i} className="victory-winner-card">
-                <p className="victory-label">
-                  {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
-                </p>
-                <p className="victory-name">{winner.userName}</p>
-                <p className="victory-ticket">{winner.ticketId}</p>
-              </div>
-            ))}
-          </>
-        )}
+                <div key={i} className="victory-winner-card">
+                  <p className="victory-label">
+                    {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
+                  </p>
+                  <p className="victory-name">{winner.userName}</p>
+                  <p className="victory-ticket">{winner.ticketId}</p>
+                </div>
+              ))}
+            </>
+          )}
 
             <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
               <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
