@@ -66,14 +66,20 @@ export default function WinnersPanel({ winners = {}, gameRules = {} }) {
 
         <div className="winners-list">
           {activeTypes.map((type) => {
-            const w = winners[type];
+            const w = winners[type]; // now an array or undefined
+            const winList = Array.isArray(w) ? w : w ? [w] : []; // handle both old & new format
             return (
-              <div key={type} className={`winner-row ${w ? "won" : "pending"}`}>
+              <div key={type} className={`winner-row ${winList.length ? "won" : "pending"}`}>
                 <span className="win-type">{WIN_LABELS[type]}</span>
-                {w ? (
+                {winList.length ? (
                   <span className="win-user">
-                    <strong>{w.userName}</strong>
-                    <small>({w.ticketId})</small>
+                    {winList.map((winner, i) => (
+                      <span key={i}>
+                        <strong>{winner.userName}</strong>
+                        <small>({winner.ticketId})</small>
+                        {i < winList.length - 1 ? " · " : ""}
+                      </span>
+                    ))}
                   </span>
                 ) : (
                   <span className="win-empty">—</span>

@@ -122,46 +122,91 @@ export default function GamePage() {
   }, [game?.status]);
 
   // ── Winner Toast Notification ─────────────────────────────────────────
+  // useEffect(() => {
+  //   if (!game) {
+  //     prevWinnersRef.current = null;
+  //     return;
+  //   }
+
+  //   const currentWinners = game.winners || {};
+
+  //   if (prevWinnersRef.current) {
+  //     const newWinTypes = Object.keys(currentWinners).filter(
+  //       type => !prevWinnersRef.current[type] && currentWinners[type]
+  //     );
+
+  //     if (newWinTypes.length > 0) {
+  //       const type = newWinTypes[0];
+  //       const winner = currentWinners[type];
+
+  //       const winLabels = {
+  //         topLine: "the Top Line",
+  //         middleLine: "the Middle Line",
+  //         lastLine: "the Last Line",
+  //         fullHouse: "a Full House"
+  //       };
+
+  //       const label = winLabels[type] || type;
+
+  //       setToast({
+  //         id: Date.now(),
+  //         user: winner.userName,
+  //         label
+  //       });
+
+  //       setTimeout(() => {
+  //         setToast(null);
+  //       }, 100000);
+  //     }
+  //   }
+
+  //   prevWinnersRef.current = currentWinners;
+  // }, [game?.winners]);
+
+
   useEffect(() => {
-    if (!game) {
-      prevWinnersRef.current = null;
-      return;
-    }
+  if (!game) {
+    prevWinnersRef.current = null;
+    return;
+  }
 
-    const currentWinners = game.winners || {};
+  const currentWinners = game.winners || {};
 
-    if (prevWinnersRef.current) {
-      const newWinTypes = Object.keys(currentWinners).filter(
-        type => !prevWinnersRef.current[type] && currentWinners[type]
-      );
+  if (prevWinnersRef.current) {
+    const newWinTypes = Object.keys(currentWinners).filter(
+      type => !prevWinnersRef.current[type] && currentWinners[type]
+    );
 
-      if (newWinTypes.length > 0) {
-        const type = newWinTypes[0];
-        const winner = currentWinners[type];
+    if (newWinTypes.length > 0) {
+      const type = newWinTypes[0];
+      const winnerData = currentWinners[type];
 
-        const winLabels = {
-          topLine: "the Top Line",
-          middleLine: "the Middle Line",
-          lastLine: "the Last Line",
-          fullHouse: "a Full House"
-        };
+      // Handle both array (tied) and single object (legacy)
+      const winnerList = Array.isArray(winnerData) ? winnerData : [winnerData];
 
-        const label = winLabels[type] || type;
+      const winLabels = {
+        topLine:    "the Top Line",
+        middleLine: "the Middle Line",
+        lastLine:   "the Last Line",
+        quickSeven: "Quick 7",
+        fullHouse:  "a Full House",
+      };
+      const label = winLabels[type] || type;
 
-        setToast({
-          id: Date.now(),
-          user: winner.userName,
-          label
-        });
-
-        setTimeout(() => {
-          setToast(null);
-        }, 100000);
+      if (winnerList.length === 1) {
+        setToast({ id: Date.now(), user: winnerList[0].userName, label, tied: false });
+      } else {
+        // Tied winners — join names
+        const names = winnerList.map(w => w.userName).join(" & ");
+        setToast({ id: Date.now(), user: names, label, tied: true });
       }
-    }
 
-    prevWinnersRef.current = currentWinners;
-  }, [game?.winners]);
+      setTimeout(() => setToast(null), 10000);
+    }
+  }
+
+  prevWinnersRef.current = currentWinners;
+}, [game?.winners]);
 
   // ── Ticket selection helpers ──────────────────────────────────────────
   function toggleTicketSelect(ticketId) {
@@ -202,7 +247,11 @@ export default function GamePage() {
     closed: { label: "Game over", cls: "status-closed" },
   };
   const status = STATUS_MAP[game?.status] || STATUS_MAP.waiting;
-  const fullHouseWinner = game?.winners?.fullHouse;
+  const fullHouseWinners = game?.winners?.fullHouse
+  ? Array.isArray(game.winners.fullHouse)
+    ? game.winners.fullHouse
+    : [game.winners.fullHouse]
+  : [];
 
   function chunkArray(arr, size) {
     const result = [];
@@ -225,7 +274,10 @@ export default function GamePage() {
           <div className="toast-content">
             <span className="toast-icon">🎉</span>
             <span className="toast-message">
-              Congratulations <strong>{toast.user}</strong>! You have completed {toast.label}.
+              {toast.tied
+                ? <>It's a tie! <strong>{toast.user}</strong> both completed {toast.label}!</>
+                : <>Congratulations <strong>{toast.user}</strong>! You have completed {toast.label}.</>
+              }
             </span>
           </div>
         </div>
@@ -315,17 +367,21 @@ export default function GamePage() {
         // Victory / Closed screen
         <main className="victory-screen">
           <div className="victory-content">
-            {fullHouseWinner && (
-              <>
-                <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
-                <h2 className="victory-title">FULL HOUSE!</h2>
-                <div className="victory-winner-card">
-                  <p className="victory-label">Today's Full House Winner</p>
-                  <p className="victory-name">{fullHouseWinner.userName}</p>
-                  <p className="victory-ticket">{fullHouseWinner.ticketId}</p>
-                </div>
-              </>
-            )}
+            {fullHouseWinners.length > 0 && (
+  <>
+    <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
+    <h2 className="victory-title">FULL HOUSE!</h2>
+            {fullHouseWinners.map((winner, i) => (
+              <div key={i} className="victory-winner-card">
+                <p className="victory-label">
+                  {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
+                </p>
+                <p className="victory-name">{winner.userName}</p>
+                <p className="victory-ticket">{winner.ticketId}</p>
+              </div>
+            ))}
+          </>
+        )}
 
             <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
               <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
@@ -334,7 +390,6 @@ export default function GamePage() {
               </p>
             </div>
 
-            {/* <WinnersPanel winners={game.winners || {}} /> */}
             <Link
               href="/winners"
               className="admin-btn primary"
@@ -348,10 +403,6 @@ export default function GamePage() {
         <main className="main-layout">
           <aside className="sidebar">
             <NumberBoard calledNumbers={game.calledNumbers || []} />
-            {/* {
-              game?.status === "live" && <WinnersPanel winners={game.winners || {}} />
-            } */}
-            
           </aside>
 
           <section className="tickets-section">
@@ -395,13 +446,6 @@ export default function GamePage() {
             {game?.rules && (
                 <div className="active-rules-bar">
                   <span className="active-rules-label">💡 Active prizes:</span>
-                  {/* {["topLine","middleLine","lastLine","fullHouse"].map(r =>
-                    game.rules[r] ? (
-                      <span key={r} className="active-rule-chip">
-                        {{ topLine:"Top Line", middleLine:"Middle Line", lastLine:"Last Line", fullHouse:"Full House" }[r]}
-                      </span>
-                    ) : null
-                  )} */}
                   {["topLine","middleLine","lastLine","quickSeven","fullHouse"].map(r =>
                     game.rules[r] ? (
                         <span key={r} className="active-rule-chip">

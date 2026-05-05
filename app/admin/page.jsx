@@ -122,26 +122,65 @@ export default function AdminPage() {
 
   useEffect(() => { calledSet.current = new Set(game?.calledNumbers || []); }, [game?.calledNumbers]);
 
+  // // ── Winner detection ──────────────────────────────────────
+  // useEffect(() => {
+  //   if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
+  //   const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, fullHouse: true };
+  //   Object.values(tickets).filter(t => t.status === "booked").forEach(async ticket => {
+  //     const wins = checkWinners(ticket.numbers, game.calledNumbers);
+  //     for (const type of WIN_TYPES) {
+  //       if (!rules[type]) continue;
+  //       if (wins[type] && !game.winners?.[type]) {
+  //         await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
+  //         success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
+  //         if (type === "fullHouse") {
+  //           stopAutoDraw();
+  //           await setGameStatus(gameId, "closed");
+  //           success(`🏆 GAME OVER! Full House: ${ticket.userName}!`);
+  //         }
+  //       }
+  //     }
+  //   });
+  // }, [game?.calledNumbers?.length]);
+
+
   // ── Winner detection ──────────────────────────────────────
-  useEffect(() => {
-    if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
-    const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, fullHouse: true };
-    Object.values(tickets).filter(t => t.status === "booked").forEach(async ticket => {
-      const wins = checkWinners(ticket.numbers, game.calledNumbers);
-      for (const type of WIN_TYPES) {
-        if (!rules[type]) continue;
-        if (wins[type] && !game.winners?.[type]) {
-          await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
-          success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
-          if (type === "fullHouse") {
-            stopAutoDraw();
-            await setGameStatus(gameId, "closed");
-            success(`🏆 GAME OVER! Full House: ${ticket.userName}!`);
-          }
-        }
+useEffect(() => {
+  if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
+  const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, quickSeven: true, fullHouse: true };
+
+  async function detectWinners() {
+    const bookedTickets = Object.values(tickets).filter(t => t.status === "booked");
+
+    for (const type of WIN_TYPES) {
+      if (!rules[type]) continue;
+      if (game.winners?.[type]) continue; // already recorded, skip
+
+      // Collect ALL tickets that won this type simultaneously
+      const winners = bookedTickets.filter(ticket => {
+        const wins = checkWinners(ticket.numbers, game.calledNumbers);
+        return wins[type];
+      });
+
+      if (winners.length === 0) continue;
+
+      // Record all tied winners sequentially (not in parallel)
+      for (const ticket of winners) {
+        await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
+        success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
       }
-    });
-  }, [game?.calledNumbers?.length]);
+
+      if (type === "fullHouse") {
+        stopAutoDraw();
+        await setGameStatus(gameId, "closed");
+        const names = winners.map(t => t.userName).join(", ");
+        success(`🏆 GAME OVER! Full House: ${names}!`);
+      }
+    }
+  }
+
+  detectWinners();
+}, [game?.calledNumbers?.length]);
 
   // ── Schedule countdown + auto-start ──────────────────────
   useEffect(() => {

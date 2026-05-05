@@ -80,9 +80,20 @@ export async function setScheduledTime(gameId, scheduledAt) {
   await updateDoc(doc(db, "games", gameId), { scheduledAt: scheduledAt ?? null });
 }
 
+// export async function recordWinner(gameId, winType, ticketId, userName, userPhone) {
+//   await updateDoc(doc(db, "games", gameId), {
+//     [`winners.${winType}`]: { ticketId, userName, userPhone: userPhone || null, claimedAt: Date.now() },
+//   });
+// }
+
+
 export async function recordWinner(gameId, winType, ticketId, userName, userPhone) {
-  await updateDoc(doc(db, "games", gameId), {
-    [`winners.${winType}`]: { ticketId, userName, userPhone: userPhone || null, claimedAt: Date.now() },
+  const ref = doc(db, "games", gameId);
+  // Use arrayUnion so multiple tied winners append to an array
+  await updateDoc(ref, {
+    [`winners.${winType}`]: arrayUnion({
+      ticketId, userName, userPhone: userPhone || null, claimedAt: Date.now(),
+    }),
   });
 }
 
