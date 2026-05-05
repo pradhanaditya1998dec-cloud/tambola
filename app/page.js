@@ -129,20 +129,30 @@ export default function GamePage() {
     if (game?.status === "live") setSelectedTickets([]);
   }, [game?.status]);
 
-  // ── Game-start countdown announcement ───────────────────────────────
-  const prevStatusRef = useRef(null);
+  // ── Game-start countdown + outro loop ───────────────────────────────
+  const prevStatusRef  = useRef(null);
+  const outroTimerRef  = useRef(null);   // track pending delay so we can cancel it
   useEffect(() => {
     const prev = prevStatusRef.current;
     const curr = game?.status ?? null;
+
+    // Leaving "closed" for any reason — cancel pending outro start + kill loop
+    if (prev === "closed" && curr !== "closed") {
+      clearTimeout(outroTimerRef.current);
+      stopLoopingAudio();
+    }
+
     if (curr === "live" && prev !== "live") {
-      stopLoopingAudio();          // stop outro loop if a new game starts
       playGameStartCountdown();
     }
+
     if (curr === "closed" && prev !== "closed" && prev !== null) {
-      // Short delay so speech synthesis doesn't overlap
-      setTimeout(() => playAudioFileLooping("outro.mp3"), 800);
+      // Delay so speech synthesis doesn't overlap; store ID so we can cancel it
+      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.mp3"), 800);
     }
+
     prevStatusRef.current = curr;
+    return () => clearTimeout(outroTimerRef.current);
   }, [game?.status]);
 
   // ── Winner Toast Notification ─────────────────────────────────────────
