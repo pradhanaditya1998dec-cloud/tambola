@@ -7,7 +7,8 @@ import {
   subscribeTickets,
   buildWhatsAppLink,
 } from "./lib/gameStore";
-import { announceNumber, preloadAudio, formatGameId } from "./lib/tambola";
+import {  formatGameId } from "./lib/tambola";
+import {announceNumber, preloadAudio, initAudio} from "./lib/audioManager";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
