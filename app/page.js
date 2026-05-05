@@ -14,7 +14,7 @@ import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
 import Link from "next/link";
 
-const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "919769740159";
+const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917628863362";
 
 export default function GamePage() {
   // ── Active game ID — driven by Firestore meta pointer ──────────────────
