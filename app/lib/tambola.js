@@ -269,7 +269,7 @@ export function generateTickets(count = 50, sheetSize = 6) {
     if (grids !== null) {
       for (const grid of grids) {
         tickets.push({
-          id: `T${String(ticketIndex + 1).padStart(2, "0")}`,
+          id: `T${ticketIndex + 1}`,
           numbers: flattenGrid(grid),
           status: "free",
           bookedBy: null,
@@ -300,7 +300,7 @@ export function generateTickets(count = 50, sheetSize = 6) {
         }
 
         tickets.push({
-          id: `T${String(ticketIndex + 1).padStart(2, "0")}`,
+          id: `T${ticketIndex + 1}`,
           numbers: flattenGrid(grid),
           status: "free",
           bookedBy: null,

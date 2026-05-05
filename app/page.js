@@ -180,7 +180,9 @@ export default function GamePage() {
   }
 
   // ── Derived values ────────────────────────────────────────────────────
-  const ticketList = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
+  const ticketList = Object.values(tickets).sort((a, b) => 
+  parseInt(a.id.slice(1)) - parseInt(b.id.slice(1))
+);
   const freeCount = ticketList.filter(t => t.status === "free").length;
   const bookedCount = ticketList.filter(t => t.status === "booked").length;
 
