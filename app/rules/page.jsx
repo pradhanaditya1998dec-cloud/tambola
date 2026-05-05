@@ -80,49 +80,55 @@ export default function RulesPage() {
                 </div>
 
                 <div className="rules-card">
-                    <div className="rules-card-icon">🏆</div>
-                    <h2>Winning Prizes</h2>
-                    <p>There are four prizes per game, claimed in this order:</p>
-                    <div className="rules-prizes">
-                        <div className="rules-prize-row">
-                            <span className="prize-icon">🎯</span>
-                            <div>
-                                <strong>Top Line</strong>
-                                <p>First to mark all 5 numbers on the <em>top row</em> of your ticket.</p>
+                        <div className="rules-card-icon">🏆</div>
+                        <h2>Winning Prizes</h2>
+                        <p>There are five prizes per game, claimed in this order:</p>
+                        <div className="rules-prizes">
+                            <div className="rules-prize-row">
+                                <span className="prize-icon">⚡</span>
+                                <div>
+                                    <strong>Quick 7</strong>
+                                    <p>First to have any <em>7 numbers</em> on your ticket called out. Speed wins this one!</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="rules-prize-row">
-                            <span className="prize-icon">🎯</span>
-                            <div>
-                                <strong>Middle Line</strong>
-                                <p>First to mark all 5 numbers on the <em>middle row</em> of your ticket.</p>
+                            <div className="rules-prize-row">
+                                <span className="prize-icon">🎯</span>
+                                <div>
+                                    <strong>Top Line</strong>
+                                    <p>First to mark all 5 numbers on the <em>top row</em> of your ticket.</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="rules-prize-row">
-                            <span className="prize-icon">🎯</span>
-                            <div>
-                                <strong>Last Line</strong>
-                                <p>First to mark all 5 numbers on the <em>bottom row</em> of your ticket.</p>
+                            <div className="rules-prize-row">
+                                <span className="prize-icon">🎯</span>
+                                <div>
+                                    <strong>Middle Line</strong>
+                                    <p>First to mark all 5 numbers on the <em>middle row</em> of your ticket.</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="rules-prize-row full-house">
-                            <span className="prize-icon">🏆</span>
-                            <div>
-                                <strong>Full House</strong>
-                                <p>First to mark <em>all 15 numbers</em> on your ticket. This ends the game!</p>
+                            <div className="rules-prize-row">
+                                <span className="prize-icon">🎯</span>
+                                <div>
+                                    <strong>Last Line</strong>
+                                    <p>First to mark all 5 numbers on the <em>bottom row</em> of your ticket.</p>
+                                </div>
+                            </div>
+                            <div className="rules-prize-row full-house">
+                                <span className="prize-icon">🏆</span>
+                                <div>
+                                    <strong>Full House</strong>
+                                    <p>First to mark <em>all 15 numbers</em> on your ticket. This ends the game!</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="rules-card">
+               <div className="rules-card">
                     <div className="rules-card-icon">📋</div>
                     <h2>General Rules</h2>
                     <ul className="rules-list">
                         <li>Each player may hold one or more tickets.</li>
-                        <li>You must claim your win <strong>before the next number is drawn</strong>.</li>
-                        <li>Unclaimed wins may be forfeited at the host's discretion.</li>
                         <li>The same player can win multiple prizes in a single game.</li>
+                        <li>Not all prizes may be active in every game — check with the host.</li>
                         <li>The host's decision is final in all disputes.</li>
                         <li>Most importantly — have fun! 🎉</li>
                     </ul>
