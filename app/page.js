@@ -7,7 +7,7 @@ import {
   subscribeTickets,
   buildWhatsAppLink,
 } from "./lib/gameStore";
-import { formatGameId } from "./lib/tambola";
+import { formatGameId, reconstructGrid } from "./lib/tambola";
 import { announceNumber, preloadAudio, initAudio, playGameStartCountdown, playAudioFile, playAudioFileLooping, stopLoopingAudio } from "./lib/audioManager";
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
@@ -371,10 +371,47 @@ export default function GamePage() {
         <div className="loading">No game active right now. Check back soon!</div>
       ) : game.status === "closed" ? (
         // Victory / Closed screen
+        // <main className="victory-screen">
+        //   <div className="victory-content">
+        //     {fullHouseWinners.length > 0 && (
+        //       <>
+        //         <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
+        //         <h2 className="victory-title">FULL HOUSE!</h2>
+        //         {fullHouseWinners.map((winner, i) => (
+        //           <div key={i} className="victory-winner-card">
+        //             <p className="victory-label">
+        //               {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
+        //             </p>
+        //             <p className="victory-name">{winner.userName}</p>
+        //             <p className="victory-ticket">{winner.ticketId}</p>
+        //           </div>
+        //         ))}
+        //       </>
+        //     )}
+
+        //     <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
+        //       <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
+        //       <p style={{ fontSize: "1.2rem", color: "var(--text)", lineHeight: "1.5" }}>
+        //         Bookings for the next game will start soon.<br />Be Ready!
+        //       </p>
+        //     </div>
+
+        //     <Link
+        //       href="/winners"
+        //       className="admin-btn primary"
+        //       style={{ marginTop: 24, display: "inline-block", padding: "12px 24px" }}
+        //     >
+        //       View All Past Winners
+        //     </Link>
+        //   </div>
+        // </main>
+
         <main className="victory-screen">
           <div className="victory-content">
+
+            {/* ── Full House ── */}
             {fullHouseWinners.length > 0 && (
-              <>
+              <div className="victory-section">
                 <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
                 <h2 className="victory-title">FULL HOUSE!</h2>
                 {fullHouseWinners.map((winner, i) => (
@@ -383,15 +420,21 @@ export default function GamePage() {
                       {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
                     </p>
                     <p className="victory-name">{winner.userName}</p>
-                    <p className="victory-ticket">{winner.ticketId}</p>
+                    {/* Ticket display */}
+                    <WinnerTicketDisplay
+                      ticket={tickets[winner.ticketId]}
+                      calledNumbers={game.calledNumbers || []}
+                      winType="fullHouse"
+                    />
                   </div>
                 ))}
-              </>
+              </div>
             )}
 
-            <div style={{ margin: "30px 0", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--accent)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
-              <h2 style={{ color: "var(--accent)", marginBottom: "12px", fontSize: "1.8rem" }}>Game Ended</h2>
-              <p style={{ fontSize: "1.2rem", color: "var(--text)", lineHeight: "1.5" }}>
+            {/* ── Game over message ── */}
+            <div className="victory-end-card">
+              <h2 className="victory-end-title">Game Ended</h2>
+              <p className="victory-end-msg">
                 Bookings for the next game will start soon.<br />Be Ready!
               </p>
             </div>
@@ -403,8 +446,10 @@ export default function GamePage() {
             >
               View All Past Winners
             </Link>
+
           </div>
         </main>
+
       ) : (
         <main className="main-layout">
           <aside className="sidebar">
@@ -413,7 +458,7 @@ export default function GamePage() {
 
           <section className="tickets-section">
 
-            
+
             {game?.rules && (
               <div className="active-rules-bar">
                 <span className="active-rules-label">💡 Active prizes:</span>
@@ -491,6 +536,46 @@ export default function GamePage() {
       {game && game.status !== "waiting" && (
         <WinnersPanel winners={game.winners || {}} gameRules={game.rules || {}} />
       )}
+    </div>
+  );
+}
+
+function WinnerTicketDisplay({ ticket, calledNumbers, winType }) {
+  if (!ticket?.numbers) return null;
+
+  const grid = Array.isArray(ticket.numbers[0])
+    ? ticket.numbers
+    : reconstructGrid(ticket.numbers);
+
+  const called = new Set(calledNumbers);
+
+  return (
+    <div className="ticket-card booked live static-display ticket-color-0">
+      {/* Header */}
+      <div className="ticket-header">
+        <span className="ticket-id">
+          {ticket.id} <span className="ticket-badge booked-badge">Booked ✓</span>
+        </span>
+        <span className="ticket-owner">👤 {ticket.userName}</span>
+      </div>
+
+      {/* Number Grid */}
+      <div className="ticket-grid">
+        {grid.map((row, ri) => (
+          <div key={ri} className="ticket-row">
+            {row.map((num, ci) => (
+              <div
+                key={ci}
+                className={`ticket-cell ${num === 0 || num === null ? "blank" :
+                  called.has(num) ? "marked" : "active"
+                  }`}
+              >
+                {num !== null && num !== 0 ? num : ""}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

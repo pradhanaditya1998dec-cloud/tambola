@@ -4686,3 +4686,122 @@ a {
   color: var(--green);
   border: 1px solid rgba(62, 207, 142, 0.2);
 }
+
+
+
+/* ── Winner Ticket Display ─────────────────────────────────────────────────
+   Add these styles to your global CSS / tambola.css
+   ─────────────────────────────────────────────────────────────────────── */
+
+.winner-ticket-display {
+  margin: 12px auto 0;
+  max-width: 360px;
+}
+
+.winner-ticket-id {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.winner-ticket-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface, #1e1e2e);
+  border: 1px solid var(--border, #333);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.winner-ticket-row {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 3px;
+}
+
+.winner-ticket-row.won-row .winner-ticket-cell:not(.empty) {
+  border-color: var(--accent, #f5a623);
+  box-shadow: 0 0 0 1px var(--accent, #f5a623);
+}
+
+.winner-ticket-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: var(--cell-bg, #2a2a3e);
+  color: var(--text, #eee);
+  transition: background 0.15s;
+}
+
+.winner-ticket-cell.empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.winner-ticket-cell.called {
+  background: var(--accent, #f5a623);
+  color: #000;
+  border-color: var(--accent, #f5a623);
+}
+
+/* ── Victory Screen Sections ──────────────────────────────────────────── */
+
+.victory-section {
+  margin-bottom: 32px;
+}
+
+.victory-section-minor {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--surface, #1e1e2e);
+  border-radius: 12px;
+  border: 1px solid var(--border, #333);
+}
+
+.victory-subtitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent, #f5a623);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.victory-winner-card.minor {
+  padding: 10px 0 0;
+}
+
+.victory-winner-card.minor .victory-name {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.victory-end-card {
+  margin: 30px 0;
+  padding: 24px;
+  background: var(--surface, #1e1e2e);
+  border-radius: 12px;
+  border: 1px solid var(--accent, #f5a623);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.victory-end-title {
+  color: var(--accent, #f5a623);
+  margin-bottom: 12px;
+  font-size: 1.8rem;
+}
+
+.victory-end-msg {
+  font-size: 1.2rem;
+  color: var(--text, #eee);
+  line-height: 1.5;
+}
