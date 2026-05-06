@@ -123,28 +123,6 @@ export default function AdminPage() {
 
   useEffect(() => { calledSet.current = new Set(game?.calledNumbers || []); }, [game?.calledNumbers]);
 
-  // // ── Winner detection ──────────────────────────────────────
-  // useEffect(() => {
-  //   if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
-  //   const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, fullHouse: true };
-  //   Object.values(tickets).filter(t => t.status === "booked").forEach(async ticket => {
-  //     const wins = checkWinners(ticket.numbers, game.calledNumbers);
-  //     for (const type of WIN_TYPES) {
-  //       if (!rules[type]) continue;
-  //       if (wins[type] && !game.winners?.[type]) {
-  //         await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
-  //         success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
-  //         if (type === "fullHouse") {
-  //           stopAutoDraw();
-  //           await setGameStatus(gameId, "closed");
-  //           success(`🏆 GAME OVER! Full House: ${ticket.userName}!`);
-  //         }
-  //       }
-  //     }
-  //   });
-  // }, [game?.calledNumbers?.length]);
-
-
   // ── Winner detection ──────────────────────────────────────
 useEffect(() => {
   if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
@@ -679,7 +657,10 @@ useEffect(() => {
               {activeRoute === "bookings" && (
                 <section className="admin-card" style={{ gridColumn: "1 / -1" }}>
                   <h2 style={{ marginBottom: 20 }}>All Bookings</h2>
-                  <BookingsTable gameId={gameId} tickets={bookedTickets} />
+                  <BookingsTable
+                    currentGameId={gameId}
+                    gameStatus={game?.status}
+                  />
                 </section>
               )}
 
