@@ -304,9 +304,9 @@ export default function GamePage() {
         <div className="header-content">
           <div>
             <h1 className="site-title">TAMBOLA</h1>
-            <p className="site-subtitle">
+            {/* <p className="site-subtitle">
               {gameId ? `Daily Housie — ${formatGameId(gameId)}` : "Daily Housie"}
-            </p>
+            </p> */}
             {game && <div className={`game-status ${status.cls}`}>{status.label}</div>}
           </div>
 
@@ -323,11 +323,17 @@ export default function GamePage() {
 
         {/* Generic Dropdown */}
         {menuOpen && (
-          <nav className="dropdown-menu" onClick={() => setMenuOpen(false)}>
-            <button className="dropdown-link" onClick={() => setActiveModal('rules')}>📋 Rules</button>
-            <button className="dropdown-link" onClick={() => setActiveModal('winners')}>🏆 Past Winners</button>
-            <button className="dropdown-link" onClick={() => setActiveModal('bookings')}>🎟️ Booking List</button>
-          </nav>
+          <>
+            <div
+              onClick={() => setMenuOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            />
+            <nav className="dropdown-menu" onClick={() => setMenuOpen(false)}>
+              <button className="dropdown-link" onClick={() => setActiveModal('rules')}>📋 Rules</button>
+              <button className="dropdown-link" onClick={() => setActiveModal('winners')}>🏆 Past Winners</button>
+              <button className="dropdown-link" onClick={() => setActiveModal('bookings')}>🎟️ Booking List</button>
+            </nav>
+          </>
         )}
       </header>
 

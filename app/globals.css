@@ -3168,6 +3168,10 @@ a {
   background-color: var(--card);
   border-radius: 50%;
   border: 1px solid var(--accent);
+  position: fixed;
+  right: 30px;
+  top: 20px;
+  z-index: 101;
 }
 
 .hamburger span {
@@ -3185,9 +3189,9 @@ a {
 
 /* Dropdown menu */
 .dropdown-menu {
-  position: absolute;
-  top: 70px;
-  right: 24px;
+  position: fixed;
+  top: 90px;
+  right: 30px;
   display: flex;
   flex-direction: column;
   padding: 12px 20px 16px;
