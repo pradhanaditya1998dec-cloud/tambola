@@ -1,16 +1,4 @@
 // lib/audioManager.js
-//
-// Cross-browser audio engine for Tambola.
-// Fixes:
-//  • iOS Safari autoplay  — single <audio> element unlocked on first gesture
-//  • Outro loop           — uses the managed element via onended
-//  • Android reliability  — explicit .load() before every .play()
-//  • Sequenced winner     — announceNumber(n, onEnd) fires callback when done
-//                           so caller can play winner sound + show toast AFTER
-//                           the number has been spoken
-//  • Pre-unlock calls     — all audio calls before first gesture are silent no-ops
-//                           (pendingFns queue removed entirely)
-
 if (typeof window === "undefined") {
   module.exports = {
     initAudio: () => { },
@@ -25,8 +13,8 @@ if (typeof window === "undefined") {
 }
 
 // ── State ──────────────────────────────────────────────────
-let audioEl = null;   // primary — number announcements
-let winnerEl = null;   // secondary — winner sound (plays after announcement ends)
+let audioEl = null;
+let winnerEl = null;
 let unlocked = false;
 let loopingSrc = null;
 
@@ -52,7 +40,6 @@ function unlock() {
       audioEl.volume = 1;
       audioEl.loop = false;
       audioEl.addEventListener("ended", onAudioEnded);
-
       startPreload();
     })
     .catch(() => {
@@ -68,10 +55,32 @@ if (typeof document !== "undefined") {
 
 // ── Ended handler ───────────────────────────────────────────
 function onAudioEnded() {
-  if (loopingSrc) _playSrc(loopingSrc);
+  if (loopingSrc) _startLoop(loopingSrc);
 }
 
-// ── Internal play helper ────────────────────────────────────
+// ── Internal loop starter ───────────────────────────────────
+// Fully resets listener state before starting the loop.
+// Prevents duplicate onAudioEnded listeners from stale queue handlers.
+function _startLoop(src) {
+  if (!audioEl) return;
+
+  audioEl.removeEventListener("ended", onAudioEnded);
+  audioQueue = [];
+  isQueueActive = false;
+
+  audioEl.addEventListener("ended", onAudioEnded);
+
+  if (!audioEl.paused) audioEl.pause();
+  audioEl.currentTime = 0;
+  audioEl.src = src;
+  audioEl.load();
+  audioEl.play().catch(err => {
+    if (err.name !== "AbortError")
+      console.warn("Loop play failed:", src, err.name);
+  });
+}
+
+// ── Internal one-shot play helper ───────────────────────────
 function _playSrc(src) {
   if (!audioEl) return;
   audioEl.loop = false;
@@ -86,7 +95,6 @@ function _playSrc(src) {
 }
 
 // ── Audio Queue ─────────────────────────────────────────────
-// Each item: { src, onEnd? }
 let audioQueue = [];
 let isQueueActive = false;
 
@@ -110,13 +118,19 @@ function _playNextInQueue() {
 
   const handleEnd = () => {
     audioEl.removeEventListener("ended", handleEnd);
-    audioEl.addEventListener("ended", onAudioEnded);
 
     if (typeof onEnd === "function") {
       try { onEnd(); } catch (e) { console.warn("onEnd callback error:", e); }
     }
 
-    _playNextInQueue();
+    if (audioQueue.length) {
+      // More items — keep going without re-attaching onAudioEnded yet
+      _playNextInQueue();
+    } else {
+      // Queue drained — re-attach onAudioEnded cleanly once
+      isQueueActive = false;
+      audioEl.addEventListener("ended", onAudioEnded);
+    }
   };
 
   audioEl.addEventListener("ended", handleEnd);
@@ -128,11 +142,11 @@ function _playNextInQueue() {
   audioEl.play().catch(err => {
     if (err.name !== "AbortError")
       console.warn("Queue play failed:", src, err.name);
-    handleEnd(); // skip on error so queue doesn't get stuck
+    handleEnd();
   });
 }
 
-// ── Secondary element helper (winner sound) ─────────────────
+// ── Secondary element helper ────────────────────────────────
 function _playWinnerSrc(src, volume = 1) {
   if (!winnerEl) return;
   winnerEl.pause();
@@ -148,50 +162,27 @@ function _playWinnerSrc(src, volume = 1) {
 
 // ── Public API ──────────────────────────────────────────────
 
-export function initAudio() {
-  // No-op — side-effects fire on import
-}
+export function initAudio() { }
 
-/**
- * Announce a drawn number (1–90).
- *
- * @param {number} n        — the number to announce
- * @param {Function} onEnd  — optional callback fired when audio finishes
- *                            use this to play winner sound + show toast AFTER
- *                            the number has been spoken
- */
 export function announceNumber(n, onEnd) {
   if (typeof window === "undefined" || !unlocked) return;
   _enqueue(`/audio/${n}.mp3`, onEnd);
 }
 
-/**
- * Play winner.wav on the SECONDARY element.
- * Can be called standalone (simultaneous) or inside announceNumber's onEnd
- * callback (sequential — after announcement finishes).
- */
 export function playWinnerSound() {
   if (typeof window === "undefined" || !unlocked) return;
   _playWinnerSrc("/audio/winner.wav", 0.9);
 }
 
-/**
- * Play any one-shot file from /audio/ — queued on primary element.
- */
 export function playAudioFile(filename) {
   if (typeof window === "undefined" || !unlocked) return;
   _enqueue(`/audio/${filename}`, null);
 }
 
-/**
- * Loop a file until stopLoopingAudio() is called.
- */
 export function playAudioFileLooping(filename) {
   if (typeof window === "undefined" || !unlocked) return;
-  audioQueue = [];
-  isQueueActive = false;
   loopingSrc = `/audio/${filename}`;
-  _playSrc(loopingSrc);
+  _startLoop(loopingSrc);
 }
 
 export function stopLoopingAudio() {
@@ -203,18 +194,13 @@ export function stopLoopingAudio() {
   }
 }
 
-/**
- * Play countdown using existing number mp3s (5 → 1).
- */
 export function playGameStartCountdown() {
   if (typeof window === "undefined" || !unlocked) return;
   ["/audio/5.mp3", "/audio/4.mp3", "/audio/3.mp3", "/audio/2.mp3", "/audio/1.mp3"]
     .forEach(src => _enqueue(src, null));
 }
 
-export function preloadAudio() {
-  // startPreload() fires automatically after unlock
-}
+export function preloadAudio() { }
 
 // ── Background preload ──────────────────────────────────────
 let preloadQueue = [];
