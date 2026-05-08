@@ -155,14 +155,20 @@ export default function GamePage() {
     return () => clearTimeout(outroTimerRef.current);
   }, [game?.status]);
 
-  // ── Winner Toast Notification ─────────────────────────────────────────
 
+
+  // ── Announce newly called numbers + trigger winner toast AFTER speech ──
   useEffect(() => {
-    if (!game) {
-      prevWinnersRef.current = null;
-      return;
-    }
+    if (!game?.calledNumbers?.length) return;
+    const prev = new Set(prevCalled.current);
+    const newNums = game.calledNumbers.filter((n) => !prev.has(n));
+    if (!newNums.length) return;
 
+    prevCalled.current = game.calledNumbers;
+
+    if (game.status === "closed") return;
+
+    // Snapshot winners at this moment — before any async delay
     const currentWinners = game.winners || {};
     const prevWinners = prevWinnersRef.current || {};
 
@@ -174,47 +180,39 @@ export default function GamePage() {
       fullHouse: "a Full House",
     };
 
-    // Find the type that newly changed
+    // Detect newly won category
     let changedType = null;
     for (const type of Object.keys(currentWinners)) {
       const curr = Array.isArray(currentWinners[type])
         ? currentWinners[type]
         : currentWinners[type] ? [currentWinners[type]] : [];
-
       const prev = Array.isArray(prevWinners[type])
         ? prevWinners[type]
         : prevWinners[type] ? [prevWinners[type]] : [];
-
-      if (curr.length > prev.length) {
-        changedType = type;
-        break;
-      }
+      if (curr.length > prev.length) { changedType = type; break; }
     }
 
+    // Always advance the winners ref so a future number doesn't re-fire the same toast
     prevWinnersRef.current = currentWinners;
 
-    if (!changedType) return;
+    // Build onEnd — fires after the number has been spoken
+    const onEnd = changedType
+      ? () => {
+        playAudioFile("winner.wav");
+        const w = currentWinners[changedType];
+        const winners = Array.isArray(w) ? w : w ? [w] : [];
+        if (!winners.length) return;
+        const label = winLabels[changedType] || changedType;
+        const names = winners.map((w) => w.userName).join(" & ");
+        setToast({ id: Date.now(), user: names, label, tied: winners.length > 1 });
+        setTimeout(() => setToast(null), 10000);
+      }
+      : null;
 
-    if (game.status === "closed") return;
+    announceNumber(newNums[newNums.length - 1], onEnd);
+  }, [game?.calledNumbers, game?.status, game?.winners]);
 
-    // Play winner sound for any newly claimed prize
-    playAudioFile("winner.wav");
 
-    // Use changedType directly — not re-scanning all winners
-    const timer = setTimeout(() => {
-      const w = currentWinners[changedType];
-      const curr = Array.isArray(w) ? w : w ? [w] : [];
-      if (curr.length === 0) return;
-
-      const label = winLabels[changedType] || changedType;
-      const names = curr.map(w => w.userName).join(" & ");
-      const tied = curr.length > 1;
-      setToast({ id: Date.now(), user: names, label, tied });
-      setTimeout(() => setToast(null), 10000);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [game?.winners]);
 
   // ── Ticket selection helpers ──────────────────────────────────────────
   function toggleTicketSelect(ticketId) {

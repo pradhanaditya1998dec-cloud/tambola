@@ -2,32 +2,32 @@
 //
 // Cross-browser audio engine for Tambola.
 // Fixes:
-//  • iOS Safari autoplay — single <audio> element unlocked on first gesture
-//  • Outro loop         — uses the managed element (not a new Audio())
-//  • Game-start countdown — chained number announcements, no SpeechSynthesis
-//  • Android reliability — explicit .load() before every .play()
-//  • Simultaneous audio  — winner sounds play OVER number announcements
-//                          using a dedicated second <audio> element
+//  • iOS Safari autoplay  — single <audio> element unlocked on first gesture
+//  • Outro loop           — uses the managed element via onended
+//  • Android reliability  — explicit .load() before every .play()
+//  • Sequenced winner     — announceNumber(n, onEnd) fires callback when done
+//                           so caller can play winner sound + show toast AFTER
+//                           the number has been spoken
+//  • Pre-unlock calls     — all audio calls before first gesture are silent no-ops
+//                           (pendingFns queue removed entirely)
 
 if (typeof window === "undefined") {
   module.exports = {
-    initAudio: () => {},
-    announceNumber: () => {},
-    preloadAudio: () => {},
-    playAudioFile: () => {},
-    playAudioFileLooping: () => {},
-    stopLoopingAudio: () => {},
-    playGameStartCountdown: () => {},
-    playWinnerSound: () => {},
+    initAudio: () => { },
+    announceNumber: () => { },
+    preloadAudio: () => { },
+    playAudioFile: () => { },
+    playAudioFileLooping: () => { },
+    stopLoopingAudio: () => { },
+    playGameStartCountdown: () => { },
+    playWinnerSound: () => { },
   };
 }
 
 // ── State ──────────────────────────────────────────────────
-let audioEl   = null;   // primary element — number announcements + queue
-let winnerEl  = null;   // secondary element — winner sounds (plays simultaneously)
-let unlocked  = false;
-let pendingFns = [];
-
+let audioEl = null;   // primary — number announcements
+let winnerEl = null;   // secondary — winner sound (plays after announcement ends)
+let unlocked = false;
 let loopingSrc = null;
 
 // ── Unlock on first user gesture ───────────────────────────
@@ -35,13 +35,11 @@ function unlock() {
   if (unlocked) return;
   unlocked = true;
 
-  // Primary element
   audioEl = new Audio();
   audioEl.preload = "auto";
   audioEl.volume = 0;
   audioEl.src = "/audio/1.mp3";
 
-  // Secondary element for winner sounds
   winnerEl = new Audio();
   winnerEl.preload = "auto";
   winnerEl.volume = 1;
@@ -55,10 +53,6 @@ function unlock() {
       audioEl.loop = false;
       audioEl.addEventListener("ended", onAudioEnded);
 
-      if (pendingFns.length > 0) {
-        pendingFns.forEach(fn => fn());
-        pendingFns = [];
-      }
       startPreload();
     })
     .catch(() => {
@@ -74,37 +68,30 @@ if (typeof document !== "undefined") {
 
 // ── Ended handler ───────────────────────────────────────────
 function onAudioEnded() {
-  if (loopingSrc) {
-    _playSrc(loopingSrc);
-  }
+  if (loopingSrc) _playSrc(loopingSrc);
 }
 
-// ── Internal play helper (primary element) ──────────────────
+// ── Internal play helper ────────────────────────────────────
 function _playSrc(src) {
   if (!audioEl) return;
   audioEl.loop = false;
-  if (!audioEl.paused) {
-    audioEl.pause();
-  }
+  if (!audioEl.paused) audioEl.pause();
   audioEl.currentTime = 0;
   audioEl.src = src;
   audioEl.load();
-  const p = audioEl.play();
-  if (p !== undefined) {
-    p.catch(err => {
-      if (err.name !== "AbortError") {
-        console.warn("Audio play failed:", src, err.name, err.message);
-      }
-    });
-  }
+  audioEl.play().catch(err => {
+    if (err.name !== "AbortError")
+      console.warn("Audio play failed:", src, err.name, err.message);
+  });
 }
 
-// ── Audio Queue (primary element) ───────────────────────────
-let audioQueue     = [];
-let isQueueActive  = false;
+// ── Audio Queue ─────────────────────────────────────────────
+// Each item: { src, onEnd? }
+let audioQueue = [];
+let isQueueActive = false;
 
-function _enqueueSrc(src) {
-  audioQueue.push(src);
+function _enqueue(src, onEnd) {
+  audioQueue.push({ src, onEnd });
   loopingSrc = null;
   if (!isQueueActive) {
     isQueueActive = true;
@@ -117,14 +104,21 @@ function _playNextInQueue() {
     isQueueActive = false;
     return;
   }
-  const src = audioQueue.shift();
+  const { src, onEnd } = audioQueue.shift();
 
   audioEl.removeEventListener("ended", onAudioEnded);
+
   const handleEnd = () => {
     audioEl.removeEventListener("ended", handleEnd);
     audioEl.addEventListener("ended", onAudioEnded);
+
+    if (typeof onEnd === "function") {
+      try { onEnd(); } catch (e) { console.warn("onEnd callback error:", e); }
+    }
+
     _playNextInQueue();
   };
+
   audioEl.addEventListener("ended", handleEnd);
 
   if (!audioEl.paused) audioEl.pause();
@@ -132,15 +126,13 @@ function _playNextInQueue() {
   audioEl.src = src;
   audioEl.load();
   audioEl.play().catch(err => {
-    if (err.name !== "AbortError") {
+    if (err.name !== "AbortError")
       console.warn("Queue play failed:", src, err.name);
-    }
-    handleEnd();
+    handleEnd(); // skip on error so queue doesn't get stuck
   });
 }
 
-// ── Secondary element helper (winner sounds) ────────────────
-// Plays on winnerEl independently — does NOT interrupt the number queue
+// ── Secondary element helper (winner sound) ─────────────────
 function _playWinnerSrc(src, volume = 1) {
   if (!winnerEl) return;
   winnerEl.pause();
@@ -149,13 +141,12 @@ function _playWinnerSrc(src, volume = 1) {
   winnerEl.volume = volume;
   winnerEl.load();
   winnerEl.play().catch(err => {
-    if (err.name !== "AbortError") {
+    if (err.name !== "AbortError")
       console.warn("Winner audio failed:", src, err.name);
-    }
   });
 }
 
-// ── Public API ─────────────────────────────────────────────
+// ── Public API ──────────────────────────────────────────────
 
 export function initAudio() {
   // No-op — side-effects fire on import
@@ -163,60 +154,44 @@ export function initAudio() {
 
 /**
  * Announce a drawn number (1–90).
- * Plays on the PRIMARY element — queued sequentially.
+ *
+ * @param {number} n        — the number to announce
+ * @param {Function} onEnd  — optional callback fired when audio finishes
+ *                            use this to play winner sound + show toast AFTER
+ *                            the number has been spoken
  */
-export function announceNumber(n) {
-  if (typeof window === "undefined") return;
-  const fn = () => _enqueueSrc(`/audio/${n}.mp3`);
-  if (!unlocked) { pendingFns.push(fn); return; }
-  fn();
+export function announceNumber(n, onEnd) {
+  if (typeof window === "undefined" || !unlocked) return;
+  _enqueue(`/audio/${n}.mp3`, onEnd);
 }
 
 /**
- * Play a winner celebration sound SIMULTANEOUSLY with any ongoing announcement.
- * Uses the SECONDARY audio element — does not interrupt the number queue.
- *
- * Drop these files in /public/audio/:
- *   winner_line.mp3   — for Top/Middle/Last line wins  (short cheer, ~2s)
- *   winner_house.mp3  — for Full House win             (big fanfare, ~4s)
- *
- * You can use any royalty-free sounds or generate them.
- * If the files don't exist, it fails silently.
- *
- * @param {"line"|"house"} type
+ * Play winner.wav on the SECONDARY element.
+ * Can be called standalone (simultaneous) or inside announceNumber's onEnd
+ * callback (sequential — after announcement finishes).
  */
-export function playWinnerSound(type = "line") {
-  if (typeof window === "undefined") return;
-  const fn = () => _playWinnerSrc("/audio/winner.wav", 0.85);
-  if (!unlocked) { pendingFns.push(fn); return; }
-  fn();
+export function playWinnerSound() {
+  if (typeof window === "undefined" || !unlocked) return;
+  _playWinnerSrc("/audio/winner.wav", 0.9);
 }
 
 /**
- * Play any one-shot audio file from /audio/.
- * Queued on the PRIMARY element (sequential with number announcements).
- * Use playWinnerSound() instead if you want simultaneous playback.
+ * Play any one-shot file from /audio/ — queued on primary element.
  */
 export function playAudioFile(filename) {
-  if (typeof window === "undefined") return;
-  const fn = () => _enqueueSrc(`/audio/${filename}`);
-  if (!unlocked) { pendingFns.push(fn); return; }
-  fn();
+  if (typeof window === "undefined" || !unlocked) return;
+  _enqueue(`/audio/${filename}`, null);
 }
 
 /**
- * Loop a file continuously until stopLoopingAudio() is called.
+ * Loop a file until stopLoopingAudio() is called.
  */
 export function playAudioFileLooping(filename) {
-  if (typeof window === "undefined") return;
-  const fn = () => {
-    audioQueue = [];
-    isQueueActive = false;
-    loopingSrc = `/audio/${filename}`;
-    _playSrc(loopingSrc);
-  };
-  if (!unlocked) { pendingFns.push(fn); return; }
-  fn();
+  if (typeof window === "undefined" || !unlocked) return;
+  audioQueue = [];
+  isQueueActive = false;
+  loopingSrc = `/audio/${filename}`;
+  _playSrc(loopingSrc);
 }
 
 export function stopLoopingAudio() {
@@ -229,29 +204,21 @@ export function stopLoopingAudio() {
 }
 
 /**
- * Play a countdown before the game starts using existing number mp3s.
+ * Play countdown using existing number mp3s (5 → 1).
  */
 export function playGameStartCountdown() {
-  if (typeof window === "undefined") return;
-  const srcs = [
-    "/audio/5.mp3",
-    "/audio/4.mp3",
-    "/audio/3.mp3",
-    "/audio/2.mp3",
-    "/audio/1.mp3",
-  ];
-  const fn = () => srcs.forEach(src => _enqueueSrc(src));
-  if (!unlocked) { pendingFns.push(fn); return; }
-  fn();
+  if (typeof window === "undefined" || !unlocked) return;
+  ["/audio/5.mp3", "/audio/4.mp3", "/audio/3.mp3", "/audio/2.mp3", "/audio/1.mp3"]
+    .forEach(src => _enqueue(src, null));
 }
 
 export function preloadAudio() {
-  // startPreload() is called automatically after unlock
+  // startPreload() fires automatically after unlock
 }
 
 // ── Background preload ──────────────────────────────────────
 let preloadQueue = [];
-let preloading   = false;
+let preloading = false;
 
 function startPreload() {
   if (preloading) return;
@@ -263,6 +230,6 @@ function startPreload() {
 async function preloadNext() {
   if (!preloadQueue.length) { preloading = false; return; }
   const n = preloadQueue.shift();
-  try { await fetch(`/audio/${n}.mp3`, { priority: "low" }); } catch (_) {}
+  try { await fetch(`/audio/${n}.mp3`, { priority: "low" }); } catch (_) { }
   setTimeout(preloadNext, 80);
 }
