@@ -142,13 +142,13 @@ export default function GamePage() {
       stopLoopingAudio();
     }
 
-    if (curr === "live" && prev !== "live") {
-      playGameStartCountdown();
-    }
+    // if (curr === "live" && prev !== "live") {
+    //   playGameStartCountdown();
+    // }
 
     if (curr === "closed" && prev !== "closed" && prev !== null) {
       // Delay so speech synthesis doesn't overlap; store ID so we can cancel it
-      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.mp3"), 800);
+      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.wav"), 800);
     }
 
     prevStatusRef.current = curr;
@@ -196,7 +196,7 @@ export default function GamePage() {
     if (!changedType) return;
 
     // Play winner sound for any newly claimed prize
-    playAudioFile("winner.mp3");
+    playAudioFile("winner.wav");
 
     // Use changedType directly — not re-scanning all winners
     const timer = setTimeout(() => {
