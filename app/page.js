@@ -195,6 +195,8 @@ export default function GamePage() {
 
     if (!changedType) return;
 
+    if (game.status === "closed") return;
+
     // Play winner sound for any newly claimed prize
     playAudioFile("winner.wav");
 
