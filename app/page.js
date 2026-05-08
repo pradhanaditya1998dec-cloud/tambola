@@ -153,7 +153,7 @@ export default function GamePage() {
         // Fallback — if no number is announced after closing,
         // start outro directly after a safe delay
         playAudioFileLooping("outro.wav");
-      }, 4000); // generous fallback in case no number was queued
+      }, 8000); // generous fallback in case no number was queued
     }
 
     prevStatusRef.current = curr;
