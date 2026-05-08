@@ -26,7 +26,7 @@ export default function NumberBoard({
   const called = new Set(calledNumbers);
   const last = calledNumbers[calledNumbers.length - 1];
   // Last 6 numbers in reverse order (most recent first)
-  const recent = [...calledNumbers].reverse().slice(0, 3);
+  const recent = [...calledNumbers].reverse().slice(0, 4);
 
   function handleClick(n) {
     if (!interactive || called.has(n)) return;
@@ -101,8 +101,8 @@ export default function NumberBoard({
 
         <div className="nb-grid">
           {Array.from({ length: 90 }, (_, i) => i + 1).map((n) => {
-            const isCalled  = called.has(n);
-            const isLatest  = n === last;
+            const isCalled = called.has(n);
+            const isLatest = n === last;
             const clickable = interactive && !isCalled;
             const c = getBallColor(n);
 
