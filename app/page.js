@@ -157,7 +157,7 @@ export default function GamePage() {
 
 
 
-  // ── Announce newly called numbers + trigger winner toast AFTER speech ──
+  // ── Announce newly called numbers ─────────────────────────────────────
   useEffect(() => {
     if (!game?.calledNumbers?.length) return;
     const prev = new Set(prevCalled.current);
@@ -168,7 +168,17 @@ export default function GamePage() {
 
     if (game.status === "closed") return;
 
-    // Snapshot winners at this moment — before any async delay
+    announceNumber(newNums[newNums.length - 1]);
+  }, [game?.calledNumbers, game?.status]);
+
+
+  // ── Winner toast + sound — watches winners independently ─────────────
+  useEffect(() => {
+    if (!game) {
+      prevWinnersRef.current = null;
+      return;
+    }
+
     const currentWinners = game.winners || {};
     const prevWinners = prevWinnersRef.current || {};
 
@@ -180,7 +190,6 @@ export default function GamePage() {
       fullHouse: "a Full House",
     };
 
-    // Detect newly won category
     let changedType = null;
     for (const type of Object.keys(currentWinners)) {
       const curr = Array.isArray(currentWinners[type])
@@ -192,25 +201,23 @@ export default function GamePage() {
       if (curr.length > prev.length) { changedType = type; break; }
     }
 
-    // Always advance the winners ref so a future number doesn't re-fire the same toast
     prevWinnersRef.current = currentWinners;
 
-    // Build onEnd — fires after the number has been spoken
-    const onEnd = changedType
-      ? () => {
-        playAudioFile("winner.wav");
-        const w = currentWinners[changedType];
-        const winners = Array.isArray(w) ? w : w ? [w] : [];
-        if (!winners.length) return;
-        const label = winLabels[changedType] || changedType;
-        const names = winners.map((w) => w.userName).join(" & ");
-        setToast({ id: Date.now(), user: names, label, tied: winners.length > 1 });
-        setTimeout(() => setToast(null), 10000);
-      }
-      : null;
+    if (!changedType) return;
+    if (game.status === "closed") return;
 
-    announceNumber(newNums[newNums.length - 1], onEnd);
-  }, [game?.calledNumbers, game?.status, game?.winners]);
+    playAudioFile("winner.wav");
+
+    const w = currentWinners[changedType];
+    const winners = Array.isArray(w) ? w : w ? [w] : [];
+    if (!winners.length) return;
+
+    const label = winLabels[changedType] || changedType;
+    const names = winners.map((w) => w.userName).join(" & ");
+    setToast({ id: Date.now(), user: names, label, tied: winners.length > 1 });
+    setTimeout(() => setToast(null), 10000);
+
+  }, [game?.winners]);
 
 
 
