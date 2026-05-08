@@ -85,7 +85,7 @@ export default function AdminPage() {
 
   // Auto-draw
   const [autoDrawEnabled, setAutoDrawEnabled] = useState(false);
-  const [autoDrawInterval, setAutoDrawInterval] = useState(4);
+  const [autoDrawInterval, setAutoDrawInterval] = useState(8);
   const [autoCountdown, setAutoCountdown] = useState(0);
   const autoDrawRef = useRef(null);
   const autoCountdownRef = useRef(null);
@@ -651,7 +651,13 @@ export default function AdminPage() {
                 <section className="admin-card" style={{ gridColumn: "1 / -1" }}>
                   <h2>Book Ticket</h2>
                   <div style={{ marginTop: 16 }}>
-                    <BookTicket gameId={gameId} freeTickets={freeTickets} onBooked={msg => success(msg)} />
+                    <BookTicket
+                      gameId={gameId}
+                      freeTickets={freeTickets}
+                      bookedTickets={bookedTickets}
+                      gameStatus={game?.status}
+                      onBooked={msg => success(msg)}
+                    />
                   </div>
                 </section>
               )}

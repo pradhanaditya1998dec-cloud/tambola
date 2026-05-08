@@ -12,8 +12,10 @@ import { announceNumber, preloadAudio, initAudio, playGameStartCountdown, playAu
 import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
-import Link from "next/link";
 import DisclaimerModal from "./components/DisclaimerModal";
+import RulesModal from "./components/RulesModal";
+import WinnersModal from "./components/WinnersModal";
+import BookingListModal from "./components/BookingListModal";
 
 const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917628863362";
 
@@ -32,6 +34,7 @@ export default function GamePage() {
   const [countdown, setCountdown] = useState("");
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'rules' | 'winners' | null
   const [toast, setToast] = useState(null);
 
   const countdownRef = useRef(null);
@@ -307,13 +310,7 @@ export default function GamePage() {
             {game && <div className={`game-status ${status.cls}`}>{status.label}</div>}
           </div>
 
-          {/* Desktop nav */}
-          <nav className="header-nav desktop-nav">
-            <Link href="/rules" className="nav-link">📋 Rules</Link>
-            <Link href="/winners" className="nav-link">🏆 Past Winners</Link>
-          </nav>
-
-          {/* Mobile hamburger */}
+          {/* Hamburger (both mobile & desktop) */}
           <button
             className="hamburger"
             onClick={() => setMenuOpen(o => !o)}
@@ -324,12 +321,12 @@ export default function GamePage() {
           </button>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Generic Dropdown */}
         {menuOpen && (
-          <nav className="mobile-nav" onClick={() => setMenuOpen(false)}>
-            <Link href="/rules" className="mobile-nav-link">📋 Rules</Link>
-            <Link href="/winners" className="mobile-nav-link">🏆 Past Winners</Link>
-            {/* {game && <div className={`game-status ${status.cls}`}>{status.label}</div>} */}
+          <nav className="dropdown-menu" onClick={() => setMenuOpen(false)}>
+            <button className="dropdown-link" onClick={() => setActiveModal('rules')}>📋 Rules</button>
+            <button className="dropdown-link" onClick={() => setActiveModal('winners')}>🏆 Past Winners</button>
+            <button className="dropdown-link" onClick={() => setActiveModal('bookings')}>🎟️ Booking List</button>
           </nav>
         )}
       </header>
@@ -447,13 +444,13 @@ export default function GamePage() {
               </p>
             </div>
 
-            <Link
-              href="/winners"
+            <button
+              onClick={() => setActiveModal('winners')}
               className="admin-btn primary"
               style={{ marginTop: 24, display: "inline-block", padding: "12px 24px" }}
             >
               View All Past Winners
-            </Link>
+            </button>
 
           </div>
         </main>
@@ -546,6 +543,11 @@ export default function GamePage() {
       )}
 
       <DisclaimerModal />
+
+      {/* Modals */}
+      {activeModal === 'rules' && <RulesModal onClose={() => setActiveModal(null)} />}
+      {activeModal === 'winners' && <WinnersModal onClose={() => setActiveModal(null)} />}
+      {activeModal === 'bookings' && <BookingListModal tickets={tickets} onClose={() => setActiveModal(null)} />}
     </div>
 
 

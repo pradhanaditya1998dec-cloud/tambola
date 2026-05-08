@@ -3153,7 +3153,7 @@ a {
 
 /* Hamburger button — hidden on desktop */
 .hamburger {
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -3183,15 +3183,21 @@ a {
   background: var(--accent);
 }
 
-/* Mobile dropdown nav */
-.mobile-nav {
+/* Dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: 70px;
+  right: 24px;
   display: flex;
   flex-direction: column;
   padding: 12px 20px 16px;
   gap: 14px;
-  border-top: 1px solid var(--border);
-  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
   animation: slideDown 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
 @keyframes slideDown {
@@ -3206,26 +3212,27 @@ a {
   }
 }
 
-.mobile-nav-link {
+.dropdown-link {
   color: var(--accent);
   text-decoration: none;
   font-size: 1rem;
   font-weight: 600;
   padding: 4px 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+}
+
+.dropdown-link:hover {
+  opacity: 0.8;
 }
 
 @media (max-width: 600px) {
   .header-nav.desktop-nav {
     display: none;
   }
-
-  .hamburger {
-    display: flex;
-    position: fixed;
-    top: 30px;
-    right: 30px;
-  }
-
 }
 
 /* ── Admin header: raw game ID as small subtitle ─────────────── */
@@ -5056,4 +5063,206 @@ a {
   background: rgba(232, 80, 58, 0.15);
   border-color: rgba(232, 80, 58, 0.4);
   color: var(--accent2);
+}
+
+/* ── Book Ticket Panel ───────────────────────────────────── */
+.sp-section {
+  background: var(--bg3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.sp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.sp-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.sp-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(245, 166, 35, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+.sp-row-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sp-link-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s;
+}
+
+.sp-link-btn:hover {
+  opacity: 0.7;
+}
+
+.sp-link-btn.danger {
+  color: var(--accent2);
+}
+
+/* ── Ticket pill grid ────────────────────────────────────── */
+.sp-ticket-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ticket-pill {
+  background: var(--bg2);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ticket-pill:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.ticket-pill.selected {
+  background: rgba(245, 166, 35, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sp-empty {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* ── Selected summary + form ─────────────────────────────── */
+.sp-selected-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+  padding: 10px 12px;
+  background: rgba(245, 166, 35, 0.07);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  border-radius: 8px;
+}
+
+.sp-selected-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.sp-selected-ids {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.sp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sp-full-btn {
+  width: 100%;
+}
+
+/* ── Player rows (booked tickets) ────────────────────────── */
+.sp-player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.sp-player-row:hover {
+  border-color: var(--border-strong);
+}
+
+.sp-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sp-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-player-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-player-meta {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Hint text ───────────────────────────────────────────── */
+.hint {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .sp-player-row {
+    flex-wrap: wrap;
+  }
+
+  .sp-player-row>div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }
