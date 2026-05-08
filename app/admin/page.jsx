@@ -18,6 +18,7 @@ import PastWinnersTable from "../components/PastWinnersTable";
 import ConfirmModal from "../components/ConfirmModal";
 import NewGameModal from "../components/NewGameModal";
 import Toast, { useToast } from "../components/Toast";
+import { playWinnerSound } from "../lib/audioManager";
 
 // ── Nav config ────────────────────────────────────────────
 const NAV_SECTIONS = [
@@ -28,7 +29,7 @@ const NAV_SECTIONS = [
   {
     label: "Tickets",
     items: [
-      { id: "book",     label: "Book Ticket",  icon: <IconTicket /> },
+      { id: "book", label: "Book Ticket", icon: <IconTicket /> },
       { id: "bookings", label: "All Bookings", icon: <IconList />, badge: true },
     ],
   },
@@ -42,39 +43,39 @@ const NAV_SECTIONS = [
 
 // ── Icons ─────────────────────────────────────────────────
 function IconGrid() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>;
 }
 function IconTicket() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a2 2 0 010-4h20a2 2 0 010 4v1a2 2 0 000 4v1a2 2 0 01-2 2H4a2 2 0 01-2-2v-1a2 2 0 000-4V9z"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a2 2 0 010-4h20a2 2 0 010 4v1a2 2 0 000 4v1a2 2 0 01-2 2H4a2 2 0 01-2-2v-1a2 2 0 000-4V9z" /></svg>;
 }
 function IconList() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" /></svg>;
 }
 function IconHistory() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
 }
 function IconChevronLeft() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>;
 }
 function IconMenu() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>;
 }
 function IconSignOut() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 13, height: 13 }}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>;
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 13, height: 13 }}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>;
 }
 
 // ── Main component ────────────────────────────────────────
 export default function AdminPage() {
   const { toasts, removeToast, success, error: toastError, info } = useToast();
 
-  const [user, setUser]           = useState(null);
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [game, setGame]       = useState(null);
+  const [game, setGame] = useState(null);
   const [tickets, setTickets] = useState({});
-  const [gameId, setGameId]   = useState(null);
+  const [gameId, setGameId] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -83,27 +84,27 @@ export default function AdminPage() {
   const [modal, setModal] = useState({ open: false });
 
   // Auto-draw
-  const [autoDrawEnabled, setAutoDrawEnabled]   = useState(false);
+  const [autoDrawEnabled, setAutoDrawEnabled] = useState(false);
   const [autoDrawInterval, setAutoDrawInterval] = useState(4);
-  const [autoCountdown, setAutoCountdown]       = useState(0);
-  const autoDrawRef      = useRef(null);
+  const [autoCountdown, setAutoCountdown] = useState(0);
+  const autoDrawRef = useRef(null);
   const autoCountdownRef = useRef(null);
 
   // Schedule
-  const [scheduleTime, setScheduleTime]           = useState("");
-  const [scheduleMsg, setScheduleMsg]             = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduleMsg, setScheduleMsg] = useState("");
   const [scheduleCountdown, setScheduleCountdown] = useState("");
   const scheduleTimerRef = useRef(null);
 
   // Sidebar
-  const [navCollapsed, setNavCollapsed]   = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [activeRoute, setActiveRoute]     = useState("game");
+  const [activeRoute, setActiveRoute] = useState("game");
 
   const calledSet = useRef(new Set());
-  const gameRef   = useRef(null);
+  const gameRef = useRef(null);
   const unsubGame = useRef(null);
-  const unsubTix  = useRef(null);
+  const unsubTix = useRef(null);
 
   // ── Auth ─────────────────────────────────────────────────
   useEffect(() => { return onAuthStateChanged(auth, setUser); }, []);
@@ -117,56 +118,58 @@ export default function AdminPage() {
     unsubGame.current?.(); unsubTix.current?.();
     if (!user || !gameId) return;
     unsubGame.current = subscribeGame(gameId, g => { setGame(g); gameRef.current = g; });
-    unsubTix.current  = subscribeTickets(gameId, t => setTickets(t));
+    unsubTix.current = subscribeTickets(gameId, t => setTickets(t));
     return () => { unsubGame.current?.(); unsubTix.current?.(); };
   }, [user, gameId]);
 
   useEffect(() => { calledSet.current = new Set(game?.calledNumbers || []); }, [game?.calledNumbers]);
 
+
   // ── Winner detection ──────────────────────────────────────
-useEffect(() => {
-  if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
-  const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, quickSeven: true, fullHouse: true };
+  useEffect(() => {
+    if (!game?.calledNumbers?.length || !Object.keys(tickets).length) return;
+    const rules = game.rules || { topLine: true, middleLine: true, lastLine: true, quickSeven: true, fullHouse: true };
 
-  async function detectWinners() {
-    const bookedTickets = Object.values(tickets).filter(t => t.status === "booked");
+    async function detectWinners() {
+      const bookedTickets = Object.values(tickets).filter(t => t.status === "booked");
 
-    for (const type of WIN_TYPES) {
-      if (!rules[type]) continue;
-      if (game.winners?.[type]) continue; // already recorded, skip
+      for (const type of WIN_TYPES) {
+        if (!rules[type]) continue;
+        if (game.winners?.[type]) continue; // already recorded, skip
 
-      // Collect ALL tickets that won this type simultaneously
-      const winners = bookedTickets.filter(ticket => {
-        const wins = checkWinners(ticket.numbers, game.calledNumbers);
-        return wins[type];
-      });
+        // Collect ALL tickets that won this type simultaneously
+        const winners = bookedTickets.filter(ticket => {
+          const wins = checkWinners(ticket.numbers, game.calledNumbers);
+          return wins[type];
+        });
 
-      if (winners.length === 0) continue;
+        if (winners.length === 0) continue;
 
-      // Record all tied winners sequentially (not in parallel)
-      // for (const ticket of winners) {
-      //   await recordWinner(gameId, type, ticket.id, ticket.userName, ticket.userPhone);
-      //   success(`🎉 ${WIN_LABELS[type]}: ${ticket.userName} (${ticket.id})`);
-      // }
+        // Write all tied winners in one Firestore call
+        await recordAllWinners(gameId, type, winners.map(t => ({
+          ticketId: t.id,
+          userName: t.userName,
+          userPhone: t.userPhone || null,
+          claimedAt: Date.now(),
+        })));
 
-      await recordAllWinners(gameId, type, winners.map(t => ({
-        ticketId: t.id,
-        userName: t.userName,
-        userPhone: t.userPhone || null,
-        claimedAt: Date.now(),
-      })));
+        // Play winner.wav simultaneously with any ongoing number announcement
+        playWinnerSound();
 
-      if (type === "fullHouse") {
-        stopAutoDraw();
-        await setGameStatus(gameId, "closed");
-        const names = winners.map(t => t.userName).join(", ");
-        success(`🏆 GAME OVER! Full House: ${names}!`);
+        // Toast for each winner
+        winners.forEach(t => success(`🎉 ${WIN_LABELS[type]}: ${t.userName} (${t.id})`));
+
+        if (type === "fullHouse") {
+          stopAutoDraw();
+          await setGameStatus(gameId, "closed");
+          const names = winners.map(t => t.userName).join(", ");
+          success(`🏆 GAME OVER! Full House: ${names}!`);
+        }
       }
     }
-  }
 
-  detectWinners();
-}, [game?.calledNumbers?.length]);
+    detectWinners();
+  }, [game?.calledNumbers?.length]);
 
   // ── Schedule countdown + auto-start ──────────────────────
   useEffect(() => {
@@ -228,7 +231,7 @@ useEffect(() => {
   }
 
   function stopAutoDraw() {
-    clearInterval(autoDrawRef.current);      autoDrawRef.current = null;
+    clearInterval(autoDrawRef.current); autoDrawRef.current = null;
     clearInterval(autoCountdownRef.current); autoCountdownRef.current = null;
     setAutoDrawEnabled(false); setAutoCountdown(0);
   }
@@ -293,10 +296,10 @@ useEffect(() => {
     catch { setAuthError("Invalid credentials."); }
   }
 
-  const ticketList    = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
-  const freeTickets   = ticketList.filter(t => t.status === "free");
+  const ticketList = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
+  const freeTickets = ticketList.filter(t => t.status === "free");
   const bookedTickets = ticketList.filter(t => t.status === "booked");
-  const calledArr     = game?.calledNumbers || [];
+  const calledArr = game?.calledNumbers || [];
 
   // BUG FIX 1: "New Game / Reset" must be disabled unless the game is
   // closed (ended) OR there is no game at all yet.
@@ -463,10 +466,10 @@ useEffect(() => {
                           </span>
                         ) : null
                       )} */}
-                      {["topLine","middleLine","lastLine","quickSeven","fullHouse"].map(r =>
+                      {["topLine", "middleLine", "lastLine", "quickSeven", "fullHouse"].map(r =>
                         game.rules[r] ? (
                           <span key={r} className="active-rule-chip">
-                            {{ topLine:"🎯 Top Line", middleLine:"🎯 Middle Line", lastLine:"🎯 Last Line", quickSeven:"⚡ Quick 7", fullHouse:"🏆 Full House" }[r]}
+                            {{ topLine: "🎯 Top Line", middleLine: "🎯 Middle Line", lastLine: "🎯 Last Line", quickSeven: "⚡ Quick 7", fullHouse: "🏆 Full House" }[r]}
                           </span>
                         ) : null
                       )}
@@ -483,9 +486,9 @@ useEffect(() => {
                       onClick={() => setNewGameModalOpen(true)}
                       disabled={!canCreateNewGame}
                       title={
-                        game?.status === "live"    ? "End the game first before creating a new one" :
-                        game?.status === "waiting" ? "End the game first before creating a new one" :
-                        undefined
+                        game?.status === "live" ? "End the game first before creating a new one" :
+                          game?.status === "waiting" ? "End the game first before creating a new one" :
+                            undefined
                       }
                       className="admin-btn outline"
                     >
@@ -593,7 +596,7 @@ useEffect(() => {
                       )}
                     </div>
                   )}
-                  {game?.status === "live"   && <div className="schedule-live-note">✅ Game is now live.</div>}
+                  {game?.status === "live" && <div className="schedule-live-note">✅ Game is now live.</div>}
                   {game?.status === "closed" && <div className="schedule-live-note">Game has ended.</div>}
 
                   {(!game?.status || game.status === "waiting") && (
@@ -630,8 +633,8 @@ useEffect(() => {
                     {game?.status === "live"
                       ? "Click any uncalled number to call it manually"
                       : game?.status === "closed"
-                      ? "Game ended — create a new game to play again"
-                      : "Start the game to enable manual number selection"}
+                        ? "Game ended — create a new game to play again"
+                        : "Start the game to enable manual number selection"}
                   </p>
                   <NumberBoard
                     key={gameId ?? "empty"}
