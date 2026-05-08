@@ -13,6 +13,7 @@ import TicketCard from "./components/TicketCard";
 import NumberBoard from "./components/NumberBoard";
 import WinnersPanel from "./components/WinnersPanel";
 import Link from "next/link";
+import DisclaimerModal from "./components/DisclaimerModal";
 
 const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917628863362";
 
@@ -543,7 +544,11 @@ export default function GamePage() {
       {game && game.status !== "waiting" && (
         <WinnersPanel winners={game.winners || {}} gameRules={game.rules || {}} />
       )}
+
+      <DisclaimerModal />
     </div>
+
+
   );
 }
 
