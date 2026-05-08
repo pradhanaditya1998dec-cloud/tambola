@@ -321,7 +321,7 @@ a {
 /* Full house — gold */
 .winners-fab.winners-fab-gold {
   border-color: rgba(245, 166, 35, 0.5);
-  background: rgba(245, 165, 35, 0.322);
+  background: var(--card);
   color: var(--accent);
 }
 
@@ -3197,7 +3197,7 @@ a {
   background: var(--card);
   animation: slideDown 0.15s ease;
   z-index: 100;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes slideDown {
