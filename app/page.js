@@ -135,24 +135,25 @@ export default function GamePage() {
 
   // ── Game-start countdown + outro loop ───────────────────────────────
   const prevStatusRef = useRef(null);
-  const outroTimerRef = useRef(null);   // track pending delay so we can cancel it
+  const outroTimerRef = useRef(null);
+
   useEffect(() => {
     const prev = prevStatusRef.current;
     const curr = game?.status ?? null;
 
-    // Leaving "closed" for any reason — cancel pending outro start + kill loop
+    // Leaving "closed" — cancel pending outro + kill loop
     if (prev === "closed" && curr !== "closed") {
       clearTimeout(outroTimerRef.current);
       stopLoopingAudio();
     }
 
-    // if (curr === "live" && prev !== "live") {
-    //   playGameStartCountdown();
-    // }
-
     if (curr === "closed" && prev !== "closed" && prev !== null) {
-      // Delay so speech synthesis doesn't overlap; store ID so we can cancel it
-      outroTimerRef.current = setTimeout(() => playAudioFileLooping("outro.wav"), 800);
+      // Set a flag so the next announceNumber call picks it up
+      outroTimerRef.current = setTimeout(() => {
+        // Fallback — if no number is announced after closing,
+        // start outro directly after a safe delay
+        playAudioFileLooping("outro.wav");
+      }, 4000); // generous fallback in case no number was queued
     }
 
     prevStatusRef.current = curr;
@@ -170,7 +171,15 @@ export default function GamePage() {
 
     prevCalled.current = game.calledNumbers;
 
-    if (game.status === "closed") return;
+    // If game just closed, chain outro as onEnd so it plays
+    // only AFTER the last number finishes speaking
+    if (game.status === "closed") {
+      clearTimeout(outroTimerRef.current); // cancel the fallback timer
+      announceNumber(newNums[newNums.length - 1], () => {
+        playAudioFileLooping("outro.wav");
+      });
+      return;
+    }
 
     announceNumber(newNums[newNums.length - 1]);
   }, [game?.calledNumbers, game?.status]);
