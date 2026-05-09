@@ -219,7 +219,7 @@ export default function GamePage() {
     if (!changedType) return;
     if (game.status === "closed") return;
 
-    playAudioFile("winner.wav");
+    playAudioFile("winner-lines.wav");
 
     const w = currentWinners[changedType];
     const winners = Array.isArray(w) ? w : w ? [w] : [];
@@ -273,11 +273,6 @@ export default function GamePage() {
     closed: { label: "Game over", cls: "status-closed" },
   };
   const status = STATUS_MAP[game?.status] || STATUS_MAP.waiting;
-  const fullHouseWinners = game?.winners?.fullHouse
-    ? Array.isArray(game.winners.fullHouse)
-      ? game.winners.fullHouse
-      : [game.winners.fullHouse]
-    : [];
 
   function chunkArray(arr, size) {
     const result = [];
@@ -429,27 +424,40 @@ export default function GamePage() {
         <main className="victory-screen">
           <div className="victory-content">
 
-            {/* ── Full House ── */}
-            {fullHouseWinners.length > 0 && (
-              <div className="victory-section">
-                <div className="victory-emoji">🎉🎊🏆🎊🎉</div>
-                <h2 className="victory-title">FULL HOUSE!</h2>
-                {fullHouseWinners.map((winner, i) => (
-                  <div key={i} className="victory-winner-card">
-                    <p className="victory-label">
-                      {fullHouseWinners.length > 1 ? `🏆 Winner ${i + 1}` : "Today's Full House Winner"}
-                    </p>
-                    <p className="victory-name">{winner.userName}</p>
-                    {/* Ticket display */}
-                    <WinnerTicketDisplay
-                      ticket={tickets[winner.ticketId]}
-                      calledNumbers={game.calledNumbers || []}
-                      winType="fullHouse"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* ── Game Winners ── */}
+            {[
+              { key: 'fullHouse', title: 'FULL HOUSE!', emoji: '🎉🎊🏆🎊🎉', label: 'Full House Winner' },
+              { key: 'topLine', title: 'TOP LINE', emoji: '🎯', label: 'Top Line Winner' },
+              { key: 'middleLine', title: 'MIDDLE LINE', emoji: '🎯', label: 'Middle Line Winner' },
+              { key: 'lastLine', title: 'LAST LINE', emoji: '🎯', label: 'Last Line Winner' },
+              { key: 'quickSeven', title: 'QUICK 7', emoji: '⚡', label: 'Quick 7 Winner' },
+            ].map(({ key, title, emoji, label }) => {
+              const categoryWinners = game?.winners?.[key]
+                ? Array.isArray(game.winners[key]) ? game.winners[key] : [game.winners[key]]
+                : [];
+              if (categoryWinners.length === 0) return null;
+              
+              return (
+                <div key={key} className="victory-section" style={{ marginTop: key === 'fullHouse' ? '0' : '40px' }}>
+                  <div className="victory-emoji" style={{ fontSize: key === 'fullHouse' ? '2.5rem' : '2rem' }}>{emoji}</div>
+                  <h2 className="victory-title" style={{ fontSize: key === 'fullHouse' ? '2rem' : '1.5rem', marginTop: '10px' }}>{title}</h2>
+                  {categoryWinners.map((winner, i) => (
+                    <div key={i} className="victory-winner-card" style={{ marginTop: '20px' }}>
+                      <p className="victory-label">
+                        {categoryWinners.length > 1 ? `🏆 Winner ${i + 1}` : `Today's ${label}`}
+                      </p>
+                      <p className="victory-name">{winner.userName}</p>
+                      {/* Ticket display */}
+                      <WinnerTicketDisplay
+                        ticket={tickets[winner.ticketId]}
+                        calledNumbers={game.calledNumbers || []}
+                        winType={key}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
 
             {/* ── Game over message ── */}
             <div className="victory-end-card">

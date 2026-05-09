@@ -171,7 +171,7 @@ export function announceNumber(n, onEnd) {
 
 export function playWinnerSound() {
   if (typeof window === "undefined" || !unlocked) return;
-  _playWinnerSrc("/audio/winner.wav", 0.9);
+  _playWinnerSrc("/audio/winner-lines.wav", 0.9);
 }
 
 export function playAudioFile(filename) {
