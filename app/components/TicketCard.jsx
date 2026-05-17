@@ -2,7 +2,7 @@
 // components/TicketCard.jsx
 import { reconstructGrid } from "../lib/tambola";
 
-const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917628863362";
+const ADMIN_PHONE = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917642026309";
 
 export default function TicketCard({
   ticket,

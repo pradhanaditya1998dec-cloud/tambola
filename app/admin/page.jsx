@@ -7,6 +7,7 @@ import {
   bookMultipleTickets, recordWinner, setScheduledTime,
   generateGameId, formatGameId,
   recordAllWinners,
+  reopenGame,
 } from "../lib/gameStore";
 import { checkWinners, WIN_TYPES, WIN_LABELS, announceNumber } from "../lib/tambola";
 import { auth } from "../lib/firebase";
@@ -296,6 +297,21 @@ export default function AdminPage() {
     catch { setAuthError("Invalid credentials."); }
   }
 
+  function confirmReopenGame() {
+  setModal({
+    open: true,
+    title: "Reopen Game?",
+    message: "This will reopen the game. All booked tickets and player info are still intact.",
+    confirmLabel: "Yes, Reopen",
+    danger: false,
+    onConfirm: async () => {
+      setModal(m => ({ ...m, open: false }));
+      await reopenGame(gameId);
+      success("Game reopened.");
+    },
+  });
+}
+
   const ticketList = Object.values(tickets).sort((a, b) => a.id.localeCompare(b.id));
   const freeTickets = ticketList.filter(t => t.status === "free");
   const bookedTickets = ticketList.filter(t => t.status === "booked");
@@ -509,6 +525,14 @@ export default function AdminPage() {
                       className="admin-btn danger"
                     >
                       ⏹ End
+                    </button>
+
+                    <button
+                      onClick={confirmReopenGame}
+                      disabled={!gameId || game?.status !== "closed"}
+                      className="admin-btn"
+                    >
+                      🔄 Reopen
                     </button>
                   </div>
 
